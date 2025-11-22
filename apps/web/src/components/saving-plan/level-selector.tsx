@@ -12,40 +12,43 @@ interface LevelSelectorProps {
 
 export function LevelSelector({ levels, selectedLevel, onSelectLevel }: LevelSelectorProps) {
   return (
-    <div className="space-y-4">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Choose Your Challenge Level</h2>
+    <div className="space-y-6">
+      <h2 className="text-h2 font-alpina text-black mb-6">Choose Your Challenge Level</h2>
       <div className="grid gap-4">
-        {levels.map((level, index) => (
-          <Card
-            key={index}
-            className={`p-6 cursor-pointer transition-all ${
-              selectedLevel?.name === level.name
-                ? "ring-2 ring-blue-600 bg-blue-50"
-                : "hover:bg-gray-50"
-            }`}
-            onClick={() => onSelectLevel(level)}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold text-gray-900">{level.name}</h3>
-                <p className="text-sm text-gray-600 mt-1">{level.description}</p>
-                <div className="mt-2 flex gap-4 text-sm">
-                  <span className="text-gray-700">
-                    <strong>Daily:</strong> {level.dailyAmount} tokens
-                  </span>
-                  <span className="text-gray-700">
-                    <strong>Duration:</strong> {level.totalDays} days
-                  </span>
+        {levels.map((level, index) => {
+          const isSelected = selectedLevel?.name === level.name;
+          const bgColor = isSelected ? "bg-celo-yellow" : "bg-celo-dark-tan";
+          const borderColor = isSelected ? "border-celo-purple" : "border-black";
+          
+          return (
+            <Card
+              key={index}
+              className={`p-6 cursor-pointer transition-all border-2 ${bgColor} ${borderColor} hover:border-celo-purple`}
+              onClick={() => onSelectLevel(level)}
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-h4 font-alpina text-black mb-2">{level.name}</h3>
+                  <p className="text-body-s text-celo-body-copy mb-3">{level.description}</p>
+                  <div className="flex gap-6 text-body-s">
+                    <span className="text-black font-bold">
+                      Daily: {level.dailyAmount} tokens
+                    </span>
+                    <span className="text-black font-bold">
+                      Duration: {level.totalDays} days
+                    </span>
+                  </div>
                 </div>
+                {isSelected && (
+                  <div className="w-8 h-8 border-2 border-black bg-celo-purple text-white flex items-center justify-center font-bold text-body-m">
+                    ✓
+                  </div>
+                )}
               </div>
-              {selectedLevel?.name === level.name && (
-                <div className="text-blue-600 text-2xl">✓</div>
-              )}
-            </div>
-          </Card>
-        ))}
+            </Card>
+          );
+        })}
       </div>
     </div>
   );
 }
-

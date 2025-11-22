@@ -15,39 +15,76 @@ module.exports = {
     },
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
+        // Celo Brand Colors
+        celo: {
+          yellow: "#FCFF52",
+          "forest-green": "#4E632A",
+          purple: "#1A0329",
+          "light-tan": "#FBF6F1",
+          "dark-tan": "#E6E3D5",
+          brown: "#635949",
+          // Accent Pops
+          "light-blue": "#8AC0F9",
+          orange: "#F29E5F",
+          pink: "#F2A9E7",
+          lime: "#B2EBA1",
+          // Functional
+          success: "#329F3B",
+          error: "#E70532",
+          inactive: "#9B9B9B",
+          "body-copy": "#666666",
+        },
+        border: "#CCCCCC",
+        input: "#E6E3D5",
+        ring: "#1A0329",
+        background: "#FBF6F1",
+        foreground: "#000000",
         primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
+          DEFAULT: "#FCFF52",
+          foreground: "#000000",
         },
         secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
+          DEFAULT: "#1A0329",
+          foreground: "#FFFFFF",
         },
         destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
+          DEFAULT: "#E70532",
+          foreground: "#FFFFFF",
         },
         muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
+          DEFAULT: "#E6E3D5",
+          foreground: "#635949",
         },
         accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
+          DEFAULT: "#4E632A",
+          foreground: "#FFFFFF",
         },
         popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
+          DEFAULT: "#FFFFFF",
+          foreground: "#000000",
         },
         card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
+          DEFAULT: "#E6E3D5",
+          foreground: "#000000",
         },
+      },
+      fontFamily: {
+        alpina: ["GT Alpina", "serif"],
+        inter: ["Inter", "sans-serif"],
+      },
+      fontSize: {
+        "h1": ["72px", { lineHeight: "84px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "h2": ["54px", { lineHeight: "72px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "h3": ["48px", { lineHeight: "48px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "h4": ["40px", { lineHeight: "40px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "body-l": ["20px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "body-m": ["16px", { lineHeight: "26px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "body-s": ["14px", { lineHeight: "18px", letterSpacing: "-0.01em", fontWeight: "250" }],
+        "eyebrow": ["12px", { lineHeight: "16px", letterSpacing: "0em", fontWeight: "750" }],
+      },
+      borderRadius: {
+        DEFAULT: "0",
+        none: "0",
       },
       keyframes: {
         "accordion-down": {

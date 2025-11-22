@@ -20,7 +20,7 @@ const frame = {
       name: "farcaster-miniapp",
       url: appUrl,
       splashImageUrl: `${appUrl}/icon.png`,
-      splashBackgroundColor: "#ffffff",
+      splashBackgroundColor: "#FCFF52",
     },
   },
 };

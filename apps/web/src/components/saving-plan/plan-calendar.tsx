@@ -62,49 +62,54 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
     ? Math.max(0, Math.floor((Date.now() / 1000 - Number(plan.startTime)) / 86400) - currentDay + 1)
     : 0;
 
+  const statusBg = plan.isCompleted
+    ? "bg-celo-success"
+    : plan.isFailed
+    ? "bg-celo-error"
+    : "bg-celo-yellow";
+  const statusText = plan.isCompleted
+    ? "text-black"
+    : plan.isFailed
+    ? "text-white"
+    : "text-black";
+
   return (
-    <Card className="p-6">
-      <div className="mb-6">
-        <div className="flex justify-between items-center mb-2">
-          <h3 className="text-xl font-semibold text-gray-900">Your Saving Streak</h3>
-          <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-            plan.isCompleted
-              ? "bg-green-100 text-green-800"
-              : plan.isFailed
-              ? "bg-red-100 text-red-800"
-              : "bg-blue-100 text-blue-800"
-          }`}>
+    <Card className="p-8 border-2 border-black bg-celo-dark-tan">
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-h3 font-alpina text-black">Your Saving Streak</h3>
+          <div className={`px-4 py-2 border-2 border-black ${statusBg} ${statusText} text-eyebrow font-bold uppercase`}>
             {plan.isCompleted ? "Completed" : plan.isFailed ? "Failed" : "Active"}
-          </span>
+          </div>
         </div>
 
         {/* Progress Bar */}
-        <div className="w-full bg-gray-200 rounded-full h-4 mb-4">
+        <div className="w-full bg-white border-2 border-black h-6 mb-6">
           <div
-            className="bg-blue-600 h-4 rounded-full transition-all duration-300"
+            className={`h-full ${plan.isCompleted ? "bg-celo-success" : "bg-celo-yellow"} transition-all duration-300`}
             style={{ width: `${progress}%` }}
           ></div>
         </div>
 
         <div className="grid grid-cols-3 gap-4 text-center">
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{completedDays}</p>
-            <p className="text-xs text-gray-600">Days Completed</p>
+          <div className="border-2 border-black bg-white p-4">
+            <p className="text-h4 font-alpina text-black">{completedDays}</p>
+            <p className="text-eyebrow text-celo-body-copy uppercase font-bold">Days Completed</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{missedDays}</p>
-            <p className="text-xs text-gray-600">Missed Days</p>
+          <div className="border-2 border-black bg-white p-4">
+            <p className="text-h4 font-alpina text-black">{missedDays}</p>
+            <p className="text-eyebrow text-celo-body-copy uppercase font-bold">Missed Days</p>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{totalDays - completedDays}</p>
-            <p className="text-xs text-gray-600">Days Remaining</p>
+          <div className="border-2 border-black bg-white p-4">
+            <p className="text-h4 font-alpina text-black">{totalDays - completedDays}</p>
+            <p className="text-eyebrow text-celo-body-copy uppercase font-bold">Days Remaining</p>
           </div>
         </div>
       </div>
 
       {/* Calendar Grid */}
-      <div className="mb-6">
-        <h4 className="text-sm font-semibold text-gray-700 mb-3">Progress Calendar</h4>
+      <div className="mb-8">
+        <h4 className="text-eyebrow font-bold text-black mb-4 uppercase">Progress Calendar</h4>
         <div className="grid grid-cols-7 gap-2">
           {Array.from({ length: totalDays }).map((_, index) => {
             const dayNumber = index + 1;
@@ -112,18 +117,26 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
             const isMissed = dayNumber <= completedDays + missedDays && !isCompleted;
             const isToday = dayNumber === currentDay + 1 && canPayToday;
 
+            let bgColor = "bg-white";
+            let textColor = "text-celo-body-copy";
+            let borderColor = "border-black";
+
+            if (isCompleted) {
+              bgColor = "bg-celo-success";
+              textColor = "text-black";
+            } else if (isMissed) {
+              bgColor = "bg-celo-error";
+              textColor = "text-white";
+            } else if (isToday) {
+              bgColor = "bg-celo-yellow";
+              textColor = "text-black";
+              borderColor = "border-celo-purple";
+            }
+
             return (
               <div
                 key={index}
-                className={`aspect-square rounded-lg flex items-center justify-center text-xs font-semibold ${
-                  isCompleted
-                    ? "bg-green-500 text-white"
-                    : isMissed
-                    ? "bg-red-500 text-white"
-                    : isToday
-                    ? "bg-blue-500 text-white ring-2 ring-blue-300"
-                    : "bg-gray-100 text-gray-400"
-                }`}
+                className={`aspect-square border-2 ${borderColor} ${bgColor} ${textColor} flex items-center justify-center text-body-s font-bold`}
               >
                 {dayNumber}
               </div>
@@ -134,21 +147,23 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
 
       {/* Payment Section */}
       {canPayToday && (
-        <div className="border-t pt-4">
-          <div className="mb-4">
-            <p className="text-sm text-gray-600 mb-2">
+        <div className="border-t-4 border-black pt-6">
+          <div className="mb-6">
+            <p className="text-body-m text-black mb-3 font-bold">
               Pay today's saving: {formatUnits(plan.dailyAmount, decimals)} {tokenSymbol || "tokens"}
             </p>
             {daysUntilNext > 0 && (
-              <p className="text-xs text-yellow-600">
-                ⚠️ You're {daysUntilNext} day(s) behind. Pay now to keep your streak!
-              </p>
+              <div className="border-2 border-black bg-celo-orange p-3 mb-4">
+                <p className="text-body-s text-black font-bold">
+                  ⚠️ You're {daysUntilNext} day(s) behind. Pay now to keep your streak!
+                </p>
+              </div>
             )}
           </div>
 
           {error && (
-            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-              <p className="text-sm text-red-600">Error: {error.message}</p>
+            <div className="mb-6 p-4 border-2 border-celo-error bg-black">
+              <p className="text-body-s text-celo-error font-bold">Error: {error.message}</p>
             </div>
           )}
 
@@ -156,19 +171,20 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
             onClick={handlePayDaily}
             disabled={isPending || isConfirming || isPaying}
             className="w-full"
+            variant="default"
           >
             {isPending || isConfirming || isPaying ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin mr-2"></div>
                 {isPending ? "Approving..." : isConfirming ? "Processing Payment..." : "Processing..."}
               </>
             ) : (
-              "💵 Pay Today's Saving"
+              "Pay Today's Saving"
             )}
           </Button>
 
           {hash && (
-            <p className="mt-2 text-xs text-gray-500 text-center">
+            <p className="mt-4 text-body-s text-celo-light-blue text-center font-inter">
               Transaction: {hash.slice(0, 10)}...{hash.slice(-8)}
             </p>
           )}
@@ -177,10 +193,10 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
 
       {/* Completed/Failed States */}
       {plan.isCompleted && (
-        <div className="border-t pt-4">
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
-            <p className="text-sm text-green-800 font-semibold mb-2">🎉 Congratulations!</p>
-            <p className="text-sm text-green-700">
+        <div className="border-t-4 border-black pt-6">
+          <div className="border-2 border-black bg-celo-success p-6">
+            <p className="text-body-l text-black font-bold mb-2">Congratulations!</p>
+            <p className="text-body-m text-black">
               You've completed your saving streak! You can now withdraw all your savings plus your stake.
             </p>
           </div>
@@ -188,10 +204,10 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
       )}
 
       {plan.isFailed && (
-        <div className="border-t pt-4">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-sm text-red-800 font-semibold mb-2">⚠️ Plan Failed</p>
-            <p className="text-sm text-red-700">
+        <div className="border-t-4 border-black pt-6">
+          <div className="border-2 border-black bg-celo-error p-6">
+            <p className="text-body-l text-white font-bold mb-2">Plan Failed</p>
+            <p className="text-body-m text-white">
               You missed too many days. Your penalty stake has been slashed.
             </p>
           </div>
@@ -200,4 +216,3 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
     </Card>
   );
 }
-

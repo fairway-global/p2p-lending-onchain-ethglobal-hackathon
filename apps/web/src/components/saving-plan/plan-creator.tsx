@@ -73,41 +73,41 @@ export function PlanCreator({
   const totalSavings = dailyAmountWei * BigInt(selectedLevel.totalDays);
 
   return (
-    <Card className="p-6">
-      <h3 className="text-xl font-semibold text-gray-900 mb-4">Review Your Plan</h3>
+    <Card className="p-8 border-2 border-black bg-celo-forest-green text-white">
+      <h3 className="text-h3 font-alpina mb-6 text-white">Review Your Plan</h3>
       
-      <div className="space-y-3 mb-6">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Level:</span>
-          <span className="font-semibold">{selectedLevel.name}</span>
+      <div className="space-y-4 mb-8">
+        <div className="flex justify-between border-b-2 border-white pb-2">
+          <span className="text-body-m text-white">Level:</span>
+          <span className="text-body-m font-bold text-celo-yellow">{selectedLevel.name}</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Daily Amount:</span>
-          <span className="font-semibold">
+        <div className="flex justify-between border-b-2 border-white pb-2">
+          <span className="text-body-m text-white">Daily Amount:</span>
+          <span className="text-body-m font-bold text-white">
             {selectedLevel.dailyAmount} {tokenSymbol || "tokens"}
           </span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Total Days:</span>
-          <span className="font-semibold">{selectedLevel.totalDays} days</span>
+        <div className="flex justify-between border-b-2 border-white pb-2">
+          <span className="text-body-m text-white">Total Days:</span>
+          <span className="text-body-m font-bold text-white">{selectedLevel.totalDays} days</span>
         </div>
-        <div className="flex justify-between">
-          <span className="text-gray-600">Penalty Stake:</span>
-          <span className="font-semibold text-red-600">
+        <div className="flex justify-between border-b-2 border-white pb-2">
+          <span className="text-body-m text-white">Penalty Stake:</span>
+          <span className="text-body-m font-bold text-celo-error">
             {penaltyStake} {tokenSymbol || "tokens"}
           </span>
         </div>
-        <div className="flex justify-between pt-2 border-t">
-          <span className="text-gray-900 font-semibold">Total Savings:</span>
-          <span className="font-bold text-green-600">
+        <div className="flex justify-between pt-4 border-t-4 border-celo-yellow">
+          <span className="text-body-l font-bold text-white">Total Savings:</span>
+          <span className="text-body-l font-bold text-celo-yellow">
             {formatUnits(totalSavings, decimals)} {tokenSymbol || "tokens"}
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-          <p className="text-sm text-red-600">Error: {error.message}</p>
+        <div className="mb-6 p-4 border-2 border-celo-error bg-black">
+          <p className="text-body-s text-celo-error font-bold">Error: {error.message}</p>
         </div>
       )}
 
@@ -115,10 +115,11 @@ export function PlanCreator({
         onClick={handleCreatePlan}
         disabled={isPending || isConfirming || isCreating}
         className="w-full"
+        variant="default"
       >
         {isPending || isConfirming || isCreating ? (
           <>
-            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+            <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin mr-2"></div>
             {isPending ? "Approving..." : isConfirming ? "Creating Plan..." : "Processing..."}
           </>
         ) : (
@@ -127,11 +128,10 @@ export function PlanCreator({
       </Button>
 
       {hash && (
-        <p className="mt-2 text-xs text-gray-500 text-center">
+        <p className="mt-4 text-body-s text-celo-light-blue text-center font-inter">
           Transaction: {hash.slice(0, 10)}...{hash.slice(-8)}
         </p>
       )}
     </Card>
   );
 }
-
