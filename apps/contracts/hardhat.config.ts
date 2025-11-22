@@ -9,6 +9,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true,
     },
   },
   networks: {
@@ -17,18 +18,27 @@ const config: HardhatUserConfig = {
       url: "https://forno.celo.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 42220,
+      timeout: 120000, // 120 seconds
+      httpHeaders: {},
     },
     // Celo Alfajores Testnet
     alfajores: {
-      url: "https://alfajores-forno.celo-testnet.org",
+      url: process.env.ALFAJORES_RPC_URL || "https://alfajores-forno.celo-testnet.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 44787,
+      timeout: 120000, // 120 seconds
+      httpHeaders: {},
+      // Alternative RPC endpoints (try these if default fails):
+      // "https://alfajores.infura.io/v3/YOUR_INFURA_KEY"
+      // "https://rpc.ankr.com/celo_alfajores"
     },
     // Celo Sepolia Testnet
     sepolia: {
       url: "https://forno.celo-sepolia.celo-testnet.org",
       accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
       chainId: 11142220,
+      timeout: 120000, // 120 seconds
+      httpHeaders: {},
     },
     // Local development
     localhost: {

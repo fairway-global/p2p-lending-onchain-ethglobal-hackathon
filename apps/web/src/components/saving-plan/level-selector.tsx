@@ -37,8 +37,8 @@ export function LevelSelector({ levels, selectedLevel, onSelectLevel }: LevelSel
                     <span className="text-black font-bold">
                       Daily: ${level.minDailyAmount}-${level.maxDailyAmount}
                     </span>
-                    <span className="text-celo-body-copy font-bold">
-                      Penalty: 20% of daily
+                    <span className="text-celo-error font-bold">
+                      Penalty: {level.penaltyPercent}% of daily
                     </span>
                   </div>
                 </div>

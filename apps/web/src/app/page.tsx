@@ -6,6 +6,7 @@ import { useAccount, useConnect } from "wagmi";
 import { LevelSelector } from "@/components/saving-plan/level-selector";
 import { PlanCreator } from "@/components/saving-plan/plan-creator";
 import { PlanCalendar } from "@/components/saving-plan/plan-calendar";
+import { PlanDashboard } from "@/components/saving-plan/plan-dashboard";
 import { useSavingContract, SAVING_LEVELS, SavingLevel } from "@/hooks/use-saving-contract";
 import { env } from "@/lib/env";
 import { Card } from "@/components/ui/card";
@@ -29,12 +30,13 @@ export default function Home() {
   const [hasActivePlan, setHasActivePlan] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<bigint | null>(null);
   
-  // Calculate penalty stake as 20% of daily amount
+  // Calculate penalty stake based on level percentage
   useEffect(() => {
-    if (customDailyAmount) {
+    if (customDailyAmount && selectedLevel) {
       const daily = parseFloat(customDailyAmount);
+      const percent = selectedLevel.penaltyPercent / 100;
       if (!isNaN(daily) && daily > 0) {
-        const penalty = (daily * 0.2).toFixed(2);
+        const penalty = (daily * percent).toFixed(2);
         setPenaltyStake(penalty);
       } else {
         setPenaltyStake("0");
@@ -42,7 +44,7 @@ export default function Home() {
     } else {
       setPenaltyStake("0");
     }
-  }, [customDailyAmount]);
+  }, [customDailyAmount, selectedLevel]);
   
   // Set default values when level is selected
   useEffect(() => {
@@ -78,6 +80,16 @@ export default function Home() {
   
   // Token address from environment
   const tokenAddress = (env.NEXT_PUBLIC_TOKEN_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
+  
+  // Debug: Log token address (check browser console)
+  useEffect(() => {
+    console.log("=== Environment Variables Debug ===");
+    console.log("Token Address:", env.NEXT_PUBLIC_TOKEN_ADDRESS);
+    console.log("Token Address (resolved):", tokenAddress);
+    console.log("Contract Address:", env.NEXT_PUBLIC_CONTRACT_ADDRESS);
+    console.log("Is token address valid?", tokenAddress !== "0x0000000000000000000000000000000000000000");
+    console.log("===================================");
+  }, [tokenAddress]);
   
   // Auto-connect wallet when miniapp is ready (only in Farcaster context)
   useEffect(() => {
@@ -122,32 +134,38 @@ export default function Home() {
 
   const handlePlanCreated = () => {
     // Use the plan ID extracted from the transaction receipt
+    // The useEffect will handle setting the active plan state
+    // This callback is triggered when the transaction is confirmed
     if (createdPlanId) {
+      // Immediately show dashboard
       setHasActivePlan(true);
       setCurrentPlanId(createdPlanId);
       setSelectedPlanId(createdPlanId);
       localStorage.setItem("savingPlanId", createdPlanId.toString());
       setSelectedLevel(null);
-      // Refetch plan data after a short delay
+      // Refetch plan data
+      refetchPlan();
       setTimeout(() => {
         refetchPlan();
       }, 2000);
     }
   };
 
-  // Watch for created plan ID
+  // Watch for created plan ID - immediately show dashboard after creation
   useEffect(() => {
-    if (createdPlanId && !hasActivePlan) {
+    if (createdPlanId) {
       setHasActivePlan(true);
       setCurrentPlanId(createdPlanId);
       setSelectedPlanId(createdPlanId);
       localStorage.setItem("savingPlanId", createdPlanId.toString());
       setSelectedLevel(null);
+      // Refetch plan data immediately and then again after a delay to ensure it's loaded
+      refetchPlan();
       setTimeout(() => {
         refetchPlan();
       }, 2000);
     }
-  }, [createdPlanId, hasActivePlan, setSelectedPlanId, refetchPlan]);
+  }, [createdPlanId, setSelectedPlanId, refetchPlan]);
 
   if (!isMiniAppReady) {
     return (
@@ -181,7 +199,7 @@ export default function Home() {
             <Card className="p-8 text-center border-2 border-black bg-celo-dark-tan">
               <p className="text-body-m text-celo-body-copy">Please connect your wallet to continue.</p>
             </Card>
-          ) : hasActivePlan && planData && currentPlanId ? (
+          ) : hasActivePlan && currentPlanId ? (
             <div className="space-y-6">
               <Button
                 onClick={() => {
@@ -197,11 +215,32 @@ export default function Home() {
                 <ArrowLeft className="w-4 h-4 mr-2" />
                 Back to Plans
               </Button>
-              <PlanCalendar 
-                plan={planData} 
-                planId={currentPlanId}
-                tokenAddress={tokenAddress}
-              />
+              {planData ? (
+                <>
+                  <PlanDashboard 
+                    plan={planData} 
+                    planId={currentPlanId}
+                    tokenAddress={tokenAddress}
+                  />
+                  <PlanCalendar 
+                    plan={planData} 
+                    planId={currentPlanId}
+                    tokenAddress={tokenAddress}
+                  />
+                </>
+              ) : (
+                <Card className="p-8 border-2 border-black bg-celo-dark-tan">
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 border-4 border-black border-t-celo-yellow mx-auto animate-spin"></div>
+                    <p className="text-body-m text-celo-body-copy font-inter">
+                      Loading your plan data...
+                    </p>
+                    <p className="text-body-s text-celo-body-copy font-inter">
+                      Plan ID: {currentPlanId.toString()}
+                    </p>
+                  </div>
+                </Card>
+              )}
             </div>
           ) : (
             <div className="space-y-8">
@@ -286,15 +325,52 @@ export default function Home() {
                       <div className="flex justify-between items-center">
                         <div>
                           <p className="text-eyebrow font-bold text-white uppercase mb-1">Penalty Stake</p>
-                          <p className="text-body-s text-white">Automatically calculated as 20% of daily amount</p>
+                          <p className="text-body-s text-white">Automatically calculated as {selectedLevel.penaltyPercent}% of daily amount</p>
                         </div>
                         <div className="text-right">
                           <p className="text-h4 font-alpina text-celo-yellow">${penaltyStake}</p>
                         </div>
                       </div>
-                      <p className="mt-3 text-body-s text-white">
-                        This amount will be slashed if you miss too many days (2 day grace period)
-                      </p>
+                    </Card>
+
+                    {/* Explanation Section */}
+                    <Card className="p-6 border-2 border-black bg-celo-purple text-white">
+                      <h4 className="text-h4 font-alpina text-celo-yellow mb-4">How It Works</h4>
+                      
+                      <div className="space-y-4">
+                        <div className="border-l-4 border-celo-yellow pl-4">
+                          <p className="text-body-m font-bold text-white mb-1">⏰ Grace Period (First Miss)</p>
+                          <p className="text-body-s text-white">
+                            If you miss your first payment, you get a <strong>2-day grace period</strong> with no penalty. 
+                            Use this time to catch up and make your payment.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-celo-error pl-4">
+                          <p className="text-body-m font-bold text-white mb-1">⚠️ Penalty After Grace Period</p>
+                          <p className="text-body-s text-white">
+                            After the grace period, if you miss a day, <strong>{selectedLevel.penaltyPercent}% of your daily amount</strong> 
+                            will be deducted from your penalty stake <strong>every missed day</strong>. 
+                            All deducted penalties go to the <strong>Community Reward Pool</strong>.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-celo-success pl-4">
+                          <p className="text-body-m font-bold text-white mb-1">🏆 Completion Reward (20% Bonus)</p>
+                          <p className="text-body-s text-white">
+                            If you complete your saving streak, you'll receive a <strong>20% bonus</strong> on your total savings! 
+                            Plus, you'll get a share of the Community Reward Pool from all penalties collected from failed plans.
+                          </p>
+                        </div>
+
+                        <div className="border-l-4 border-celo-light-blue pl-4">
+                          <p className="text-body-m font-bold text-white mb-1">💰 Community Reward Pool</p>
+                          <p className="text-body-s text-white">
+                            All penalties deducted from missed payments are pooled together and distributed to users who 
+                            successfully complete their saving plans. The more you save, the more you can earn!
+                          </p>
+                        </div>
+                      </div>
                     </Card>
 
                     {canCreatePlan && (

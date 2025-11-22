@@ -45,8 +45,21 @@ export function PlanCreator({
   const decimals = tokenDecimals || 18;
 
   const handleCreatePlan = async () => {
+    // Debug logging
+    console.log("Token Address in PlanCreator:", tokenAddress);
+    console.log("Is zero address?", tokenAddress === "0x0000000000000000000000000000000000000000");
+    
     if (!tokenAddress || tokenAddress === "0x0000000000000000000000000000000000000000") {
-      alert("Please set a valid token address");
+      const envValue = process.env.NEXT_PUBLIC_TOKEN_ADDRESS;
+      alert(
+        "Please set a valid token address in your .env.local file.\n\n" +
+        "Current value: " + (envValue || "NOT SET") + "\n\n" +
+        "Add this line to apps/web/.env.local:\n" +
+        "NEXT_PUBLIC_TOKEN_ADDRESS=0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1\n\n" +
+        "(This is cUSD on Celo Alfajores testnet)\n\n" +
+        "IMPORTANT: Restart your dev server after creating/updating .env.local\n" +
+        "Stop the server (Ctrl+C) and run 'npm run dev' again."
+      );
       return;
     }
 
@@ -96,9 +109,15 @@ export function PlanCreator({
           <span className="text-body-m font-bold text-white">{customDays} days</span>
         </div>
         <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Penalty Stake (20%):</span>
+          <span className="text-body-m text-white">Penalty Stake ({selectedLevel.penaltyPercent}%):</span>
           <span className="text-body-m font-bold text-celo-error">
             ${penaltyStake} {tokenSymbol ? `(${formatUnits(totalStake, decimals)} ${tokenSymbol})` : ""}
+          </span>
+        </div>
+        <div className="flex justify-between border-b-2 border-white pb-2">
+          <span className="text-body-m text-white">Completion Reward (20%):</span>
+          <span className="text-body-m font-bold text-celo-success">
+            ${((Number(customDailyAmount) * customDays) * 0.2).toFixed(2)} {tokenSymbol ? `(${formatUnits(totalSavings * BigInt(20) / BigInt(100), decimals)} ${tokenSymbol})` : ""}
           </span>
         </div>
         <div className="flex justify-between pt-4 border-t-4 border-celo-yellow">

@@ -31,6 +31,7 @@ export interface SavingLevel {
   maxDays: number;
   minDailyAmount: number;
   maxDailyAmount: number;
+  penaltyPercent: number;
   description: string;
 }
 
@@ -41,7 +42,8 @@ export const SAVING_LEVELS: SavingLevel[] = [
     maxDays: 15,
     minDailyAmount: 5,
     maxDailyAmount: 50,
-    description: "Choose 7-15 days, $5-$50 daily. Penalty stake: 20% of daily amount",
+    penaltyPercent: 10,
+    description: "Choose 7-15 days, $5-$50 daily. Penalty: 10% of daily amount",
   },
   {
     name: "Intermediate",
@@ -49,7 +51,8 @@ export const SAVING_LEVELS: SavingLevel[] = [
     maxDays: 30,
     minDailyAmount: 5,
     maxDailyAmount: 50,
-    description: "Choose 16-30 days, $5-$50 daily. Penalty stake: 20% of daily amount",
+    penaltyPercent: 15,
+    description: "Choose 16-30 days, $5-$50 daily. Penalty: 15% of daily amount",
   },
   {
     name: "Hard",
@@ -57,7 +60,8 @@ export const SAVING_LEVELS: SavingLevel[] = [
     maxDays: 90,
     minDailyAmount: 5,
     maxDailyAmount: 50,
-    description: "Choose 31-90 days, $5-$50 daily. Penalty stake: 20% of daily amount",
+    penaltyPercent: 20,
+    description: "Choose 31-90 days, $5-$50 daily. Penalty: 20% of daily amount",
   },
 ];
 
@@ -174,6 +178,20 @@ export function useSavingContract() {
     });
   };
 
+  // Check and deduct penalty for missed payments
+  const checkAndDeductPenalty = async (planId: bigint) => {
+    if (!isConnected || !address) {
+      throw new Error("Wallet not connected");
+    }
+
+    return writeContract({
+      address: CONTRACT_ADDRESS,
+      abi: SimpleSavingPlanABI,
+      functionName: "checkAndDeductPenalty",
+      args: [planId],
+    });
+  };
+
   // Mark plan as failed (for admin/community)
   const markFailed = async (planId: bigint) => {
     if (!isConnected || !address) {
@@ -205,6 +223,7 @@ export function useSavingContract() {
   return {
     createPlan,
     payDaily,
+    checkAndDeductPenalty,
     markFailed,
     withdraw,
     approveToken,

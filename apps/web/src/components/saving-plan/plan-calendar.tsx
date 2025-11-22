@@ -16,8 +16,9 @@ interface PlanCalendarProps {
 }
 
 export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) {
-  const { payDaily, isPending, isConfirming, isConfirmed, error, hash, refetchPlan } = useSavingContract();
+  const { payDaily, withdraw, isPending, isConfirming, isConfirmed, error, hash, refetchPlan } = useSavingContract();
   const [isPaying, setIsPaying] = useState(false);
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
 
   const { data: tokenSymbol } = useReadContract({
     address: tokenAddress,
@@ -193,13 +194,64 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
 
       {/* Completed/Failed States */}
       {plan.isCompleted && (
-        <div className="border-t-4 border-black pt-6">
+        <div className="border-t-4 border-black pt-6 space-y-4">
           <div className="border-2 border-black bg-celo-success p-6">
-            <p className="text-body-l text-black font-bold mb-2">Congratulations!</p>
-            <p className="text-body-m text-black">
-              You've completed your saving streak! You can now withdraw all your savings plus your stake.
+            <p className="text-body-l text-black font-bold mb-2">🎉 Congratulations!</p>
+            <p className="text-body-m text-black mb-3">
+              You've completed your saving streak! You can now withdraw:
             </p>
+            <div className="space-y-2 mt-4">
+              <div className="flex justify-between border-t-2 border-black pt-2">
+                <span className="text-body-m text-black font-bold">Your Savings:</span>
+                <span className="text-body-m text-black font-bold">
+                  {formatUnits(plan.dailyAmount * plan.currentDay, decimals)} {tokenSymbol || "tokens"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t-2 border-black pt-2">
+                <span className="text-body-m text-black font-bold">Penalty Stake (Returned):</span>
+                <span className="text-body-m text-black font-bold">
+                  {formatUnits(plan.penaltyStake, decimals)} {tokenSymbol || "tokens"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t-4 border-celo-yellow pt-2 bg-celo-yellow px-3 py-2">
+                <span className="text-body-l text-black font-bold">20% Completion Bonus:</span>
+                <span className="text-body-l text-black font-bold">
+                  {formatUnits((plan.dailyAmount * plan.currentDay * BigInt(20)) / BigInt(100), decimals)} {tokenSymbol || "tokens"}
+                </span>
+              </div>
+              <div className="flex justify-between border-t-4 border-black pt-2 bg-celo-light-blue px-3 py-2">
+                <span className="text-body-l text-black font-bold">Reward Pool Share:</span>
+                <span className="text-body-l text-black font-bold">
+                  + Share from community pool
+                </span>
+              </div>
+            </div>
           </div>
+          <Button
+            onClick={async () => {
+              setIsWithdrawing(true);
+              try {
+                await withdraw(planId);
+              } catch (err) {
+                console.error("Error withdrawing:", err);
+                alert("Failed to withdraw. Please try again.");
+              } finally {
+                setIsWithdrawing(false);
+              }
+            }}
+            disabled={isPending || isConfirming || isWithdrawing}
+            className="w-full"
+            variant="default"
+          >
+            {isPending || isConfirming || isWithdrawing ? (
+              <>
+                <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin mr-2"></div>
+                Withdrawing...
+              </>
+            ) : (
+              "💰 Withdraw All Rewards"
+            )}
+          </Button>
         </div>
       )}
 

@@ -16,7 +16,7 @@ export const env = createEnv({
     NEXT_PUBLIC_FARCASTER_PAYLOAD: z.string().min(1).optional().default("build-time-placeholder"),
     NEXT_PUBLIC_FARCASTER_SIGNATURE: z.string().min(1).optional().default("build-time-placeholder"),
     NEXT_PUBLIC_CONTRACT_ADDRESS: z.string().min(1).optional().default("0x0000000000000000000000000000000000000000"),
-    NEXT_PUBLIC_TOKEN_ADDRESS: z.string().min(1).optional().default("0x0000000000000000000000000000000000000000"),
+    NEXT_PUBLIC_TOKEN_ADDRESS: z.string().optional().default("0x0000000000000000000000000000000000000000"),
   },
   // For Next.js >= 13.4.4, you only need to destructure client variables:
   experimental__runtimeEnv: {
