@@ -74,7 +74,7 @@ export default function Home() {
 
   // Extract user data from context
   const user = context?.user;
-  const walletAddress = address || user?.custody || user?.verifications?.[0] || "0x1e4B...605B";
+  const walletAddress = address || user?.custody || user?.verifications?.[0] || "No Address";
   const displayName = user?.displayName || user?.username || "User";
   const username = user?.username || "@user";
   const pfpUrl = user?.pfpUrl;
