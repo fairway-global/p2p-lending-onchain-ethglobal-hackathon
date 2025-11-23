@@ -34,7 +34,61 @@ export default function Home() {
   const [hasActivePlan, setHasActivePlan] = useState(false);
   const [currentPlanId, setCurrentPlanId] = useState<bigint | null>(null);
   const [showHowDetails, setShowHowDetails] = useState(false);
-  
+  const handledPlanIdRef = useRef<string | null>(null);
+
+  const getWalletPlans = (addr: string): bigint[] => {
+    const walletPlansKey = `walletPlans_${addr}`;
+    const raw = localStorage.getItem(walletPlansKey);
+    if (!raw) return [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) {
+        return parsed
+          .map((id) => {
+            try {
+              return BigInt(id);
+            } catch {
+              return null;
+            }
+          })
+          .filter((id): id is bigint => id !== null);
+      }
+      return [BigInt(raw)];
+    } catch {
+      try {
+        return [BigInt(raw)];
+      } catch {
+        return [];
+      }
+    }
+  };
+
+  const saveWalletPlans = (addr: string, plans: bigint[]) => {
+    const walletPlansKey = `walletPlans_${addr}`;
+    const unique = Array.from(new Set(plans.map((p) => p.toString()))).map((p) => BigInt(p));
+    localStorage.setItem(walletPlansKey, JSON.stringify(unique.map((p) => p.toString())));
+  };
+
+  const addPlanIdForWallet = (addr: string, planId: bigint) => {
+    const plans = getWalletPlans(addr);
+    const reordered = [planId, ...plans.filter((p) => p.toString() !== planId.toString())];
+    saveWalletPlans(addr, reordered);
+    localStorage.setItem("savingPlanId", planId.toString());
+  };
+
+  const removePlanIdForWallet = (addr: string, planId: bigint) => {
+    const plans = getWalletPlans(addr).filter((p) => p.toString() !== planId.toString());
+    if (plans.length) {
+      saveWalletPlans(addr, plans);
+      localStorage.setItem("savingPlanId", plans[0].toString());
+    } else {
+      const walletPlansKey = `walletPlans_${addr}`;
+      localStorage.removeItem(walletPlansKey);
+      localStorage.removeItem("savingPlanId");
+    }
+    return plans;
+  };
+
   // Calculate penalty stake based on level percentage
   useEffect(() => {
     if (customDailyAmount && selectedLevel) {
@@ -80,7 +134,7 @@ export default function Home() {
   
   const canCreatePlan = selectedLevel && isValidDays(customDays) && isValidDailyAmount(customDailyAmount);
   
-  const { planData, setSelectedPlanId, refetchPlan, createdPlanId } = useSavingContract();
+  const { planData, setSelectedPlanId, selectedPlanId, refetchPlan, createdPlanId } = useSavingContract();
   
   // Debug: Log when createdPlanId changes
   useEffect(() => {
@@ -106,38 +160,32 @@ export default function Home() {
   useEffect(() => {
     if (isConnected && address) {
       console.log("🔍 Checking for saved plan for wallet:", address);
-      // Check if this wallet address has a saved plan
-      const walletPlansKey = `walletPlans_${address.toLowerCase()}`;
-      const savedPlanId = localStorage.getItem(walletPlansKey);
-      
-      if (savedPlanId) {
-        console.log("✅ Found saved plan for wallet:", savedPlanId);
-        const planId = BigInt(savedPlanId);
-        setCurrentPlanId(planId);
-        setSelectedPlanId(planId);
+      const walletKey = address.toLowerCase();
+      const walletPlans = getWalletPlans(walletKey);
+      let planIdToUse: bigint | null = walletPlans.length ? walletPlans[0] : null;
+
+      if (!planIdToUse) {
+        const legacyPlanId = localStorage.getItem("savingPlanId");
+        if (legacyPlanId) {
+          try {
+            planIdToUse = BigInt(legacyPlanId);
+            addPlanIdForWallet(walletKey, planIdToUse);
+            console.log("📦 Migrated legacy plan to wallet storage", legacyPlanId);
+          } catch {
+            planIdToUse = null;
+          }
+        }
+      }
+
+      if (planIdToUse) {
+        console.log("✅ Using latest saved plan for wallet:", planIdToUse.toString());
+        setCurrentPlanId(planIdToUse);
+        setSelectedPlanId(planIdToUse);
         setHasActivePlan(true);
-        // Also set the general savingPlanId for backward compatibility
-        localStorage.setItem("savingPlanId", savedPlanId);
-        // Refetch plan data to verify it belongs to this wallet
+        setShowPlanner(true);
         setTimeout(() => {
           refetchPlan();
         }, 500);
-      } else {
-        // Check for legacy plan ID (without wallet address)
-        const legacyPlanId = localStorage.getItem("savingPlanId");
-        if (legacyPlanId) {
-          console.log("📦 Found legacy plan ID, migrating to wallet-specific storage");
-          const planId = BigInt(legacyPlanId);
-          setCurrentPlanId(planId);
-          setSelectedPlanId(planId);
-          setHasActivePlan(true);
-          // Migrate to wallet-specific storage
-          localStorage.setItem(walletPlansKey, legacyPlanId);
-          // Refetch plan data to verify it belongs to this wallet
-          setTimeout(() => {
-            refetchPlan();
-          }, 500);
-        }
       }
     } else if (!isConnected) {
       // Wallet disconnected - clear active plan state (but keep saved plan for when they reconnect)
@@ -145,7 +193,9 @@ export default function Home() {
       setCurrentPlanId(null);
       setSelectedPlanId(null);
     }
-  }, [isConnected, address, setSelectedPlanId, refetchPlan]);
+  // Note: refetchPlan/setSelectedPlanId are stable enough to omit from deps to avoid
+  // effect thrashing on re-renders caused by refetch reference changes.
+  }, [isConnected, address]);
 
   // Watch plan data changes and verify plan ownership
   useEffect(() => {
@@ -159,73 +209,101 @@ export default function Home() {
         setHasActivePlan(false);
         setCurrentPlanId(null);
         setSelectedPlanId(null);
-        // Remove incorrect plan storage
-        const walletPlansKey = `walletPlans_${connectedAddress}`;
-        localStorage.removeItem(walletPlansKey);
-        localStorage.removeItem("savingPlanId");
+        // Remove incorrect plan storage and try previous plan for this wallet
+        const incorrectPlanId = currentPlanId || selectedPlanId;
+        if (incorrectPlanId) {
+          const remaining = removePlanIdForWallet(connectedAddress, incorrectPlanId);
+          if (remaining.length) {
+            const latest = remaining[0];
+            console.log("➡️ Loading previous plan for wallet:", latest.toString());
+            setCurrentPlanId(latest);
+            setSelectedPlanId(latest);
+            setHasActivePlan(true);
+            setShowPlanner(true);
+            return;
+          }
+        }
         return;
       }
       
       if (planData.isCompleted || planData.isFailed) {
         setHasActivePlan(false);
         // Remove wallet-specific plan storage
-        const walletPlansKey = `walletPlans_${address.toLowerCase()}`;
-        localStorage.removeItem(walletPlansKey);
-        localStorage.removeItem("savingPlanId");
+        const remaining = removePlanIdForWallet(address.toLowerCase(), currentPlanId || BigInt(0));
         console.log("🗑️ Removed completed/failed plan for wallet:", address);
+        if (remaining.length) {
+          const latest = remaining[0];
+          setCurrentPlanId(latest);
+          setSelectedPlanId(latest);
+          setHasActivePlan(true);
+          setShowPlanner(true);
+        }
       } else if (planData.isActive) {
         setHasActivePlan(true);
       }
     }
-  }, [planData, address, setSelectedPlanId]);
+  }, [planData, address]);
+
+  // Ensure planner view is shown whenever we have an active/current plan
+  useEffect(() => {
+    if (hasActivePlan && currentPlanId) {
+      setShowPlanner(true);
+    }
+  }, [hasActivePlan, currentPlanId]);
 
 
 
   useEffect(() => {
     const planIdValue = createdPlanId;
-    console.log("🔔 useEffect triggered, createdPlanId:", planIdValue?.toString() || "null", "type:", typeof planIdValue, "isTruthy:", !!planIdValue);
+    const planIdStr = planIdValue?.toString();
+    console.log(
+      "🔔 useEffect triggered, createdPlanId:",
+      planIdStr || "null",
+      "type:",
+      typeof planIdValue,
+      "isTruthy:",
+      !!planIdValue
+    );
     
-    // Check if we have a valid plan ID (not null, not undefined, and not 0)
-    if (planIdValue !== null && planIdValue !== undefined && planIdValue !== BigInt(0)) {
-      const planIdStr = planIdValue.toString();
+    // Only react to new, valid plan ids once to avoid render loops
+    if (
+      planIdValue !== null &&
+      planIdValue !== undefined &&
+      planIdValue !== BigInt(0) &&
+      planIdStr &&
+      handledPlanIdRef.current !== planIdStr
+    ) {
+      handledPlanIdRef.current = planIdStr;
       console.log("🚀 Plan created! Plan ID:", planIdStr);
       console.log("📊 Navigating to dashboard...");
       
-      // Only navigate if we don't already have this plan active
-      if (currentPlanId?.toString() !== planIdStr) {
-        console.log("✅ Setting up dashboard for plan:", planIdStr);
-        setHasActivePlan(true);
-        setCurrentPlanId(planIdValue);
-        setSelectedPlanId(planIdValue);
-        
-        // Save plan ID with wallet address for persistence
-        if (address) {
-          const walletPlansKey = `walletPlans_${address.toLowerCase()}`;
-          localStorage.setItem(walletPlansKey, planIdStr);
-          console.log("💾 Saved plan for wallet:", address, "planId:", planIdStr);
-        }
-        // Also save legacy format for backward compatibility
-        localStorage.setItem("savingPlanId", planIdStr);
-        
-        setSelectedLevel(null);
-        setCustomDays("");
-        setCustomDailyAmount("");
-        setPenaltyStake("0");
-        // Refetch plan data immediately and then again after delays to ensure it's loaded
-        refetchPlan();
-        setTimeout(() => {
-          refetchPlan();
-        }, 1000);
-        setTimeout(() => {
-          refetchPlan();
-        }, 3000);
-      } else {
-        console.log("⚠️ Plan already active, skipping navigation");
+      setShowPlanner(true);
+      setHasActivePlan(true);
+      setCurrentPlanId(planIdValue);
+      setSelectedPlanId(planIdValue);
+      if (address) {
+        addPlanIdForWallet(address.toLowerCase(), planIdValue);
       }
+      
+      if (address) {
+        console.log("💾 Saved plan for wallet:", address, "planId:", planIdStr);
+      }
+      
+      setSelectedLevel(null);
+      setCustomDays("");
+      setCustomDailyAmount("");
+      setPenaltyStake("0");
+      refetchPlan();
+      setTimeout(() => {
+        refetchPlan();
+      }, 1000);
+      setTimeout(() => {
+        refetchPlan();
+      }, 3000);
     } else {
       console.log("⏸️ No valid planId yet, waiting...");
     }
-  }, [createdPlanId, setSelectedPlanId, refetchPlan, currentPlanId, address]);
+  }, [createdPlanId, address, refetchPlan, setSelectedPlanId]);
 
   const slides = [
     {
@@ -515,88 +593,71 @@ export default function Home() {
                           </p>
                         </div>
                         <div className="text-right">
-                          <p className="text-h4 font-alpina text-celo-yellow">{formatUsdWithCelo(penaltyStake)}</p>
+                          <p className="text-sm font-alpina text-celo">{formatUsdWithCelo(penaltyStake)}</p>
                         </div>
                       </div>
                     </Card>
 
                     {/* Explanation Section */}
-                    <Card className="p-6 border-2 border-black bg-celo-purple text-white">
-                      <h4 className="text-h4 font-alpina text-celo-yellow mb-4">How It Works</h4>
-                      
-                      <div className="space-y-4">
-                        <div className="border-l-4 border-celo-yellow pl-4">
-                          <p className="text-body-m font-bold text-white mb-1">⏰ Grace Period (First Miss)</p>
-                          <p className="text-body-s text-white">
-                            If you miss your first payment, you get a <strong>2-day grace period</strong> with no penalty. 
-                            Use this time to catch up and make your payment.
-                          </p>
-                        </div>
-
-                        <div className="border-l-4 border-celo-error pl-4">
-                          <p className="text-body-m font-bold text-white mb-1">⚠️ Penalty After Grace Period</p>
-                          <p className="text-body-s text-white">
-                            After the grace period, if you miss a day, <strong>{selectedLevel.penaltyPercent}% of your daily amount</strong> 
-                            will be deducted from your penalty stake <strong>every missed day</strong>. 
-                            All deducted penalties go to the <strong>Community Reward Pool</strong>.
-                          </p>
-                        </div>
-
-                        <div className="border-l-4 border-celo-success pl-4">
-                          <p className="text-body-m font-bold text-white mb-1">🏆 Completion Reward (20% Bonus)</p>
-                          <p className="text-body-s text-white">
-                            If you complete your saving streak, you&apos;ll receive a <strong>20% bonus</strong> on your total savings! 
-                            Plus, you&apos;ll get a share of the Community Reward Pool from all penalties collected from failed plans.
-                          </p>
-                        </div>
-
-                        <div className="border-l-4 border-celo-light-blue pl-4">
-                          <p className="text-body-m font-bold text-white mb-1">💰 Community Reward Pool</p>
-                          <p className="text-body-s text-white">
-                            All penalties deducted from missed payments are pooled together and distributed to users who 
-                            successfully complete their saving plans. The more you save, the more you can earn!
-                          </p>
-                        </div>
+                    <div className="space-y-3">
+                      <div className="flex justify-end">
+                        <button
+                          type="button"
+                          onClick={() => setShowHowDetails((prev) => !prev)}
+                          aria-expanded={showHowDetails}
+                          className="text-[11px] font-semibold uppercase tracking-wide text-[#16243D] bg-white/80 border border-white/70 rounded-full px-3 py-1 shadow-neo transition hover:-translate-y-[1px]"
+                        >
+                          {showHowDetails ? "Hide How It Works" : "Click to see details"}
+                        </button>
                       </div>
-                      {showHowDetails ? (
-                        <div className="space-y-4 mt-3">
-                          <div className="rounded-neo bg-[#F5F5F7] shadow-neoInset p-3">
-                            <p className="text-sm font-semibold text-[#16243D] mb-1">⏰ Grace Period (First Miss)</p>
-                            <p className="text-sm text-[#4B5563]">
-                              If you miss your first payment, you get a <strong>2-day grace period</strong> with no penalty. 
-                              Use this time to catch up and make your payment.
-                            </p>
+
+                      {showHowDetails && (
+                        <Card className="p-6 rounded-neo shadow-neo bg-[#F5F5F7] border border-white/70 text-[#16243D]">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="text-lg font-semibold text-[#16243D]">How It Works</h4>
+                            <span className="text-xs uppercase tracking-wide text-[#6B7280]">Rules & rewards</span>
                           </div>
 
-                          <div className="rounded-neo bg-[#F5F5F7] shadow-neoInset p-3">
-                            <p className="text-sm font-semibold text-[#16243D] mb-1">⚠️ Penalty After Grace Period</p>
-                            <p className="text-sm text-[#4B5563]">
-                              After the grace period, if you miss a day, <strong>{selectedLevel.penaltyPercent}% of your daily amount</strong> 
-                              will be deducted from your penalty stake <strong>every missed day</strong>. 
-                              All deducted penalties go to the <strong>Community Reward Pool</strong>.
-                            </p>
-                          </div>
+                          <div className="space-y-3">
+                            <div className="rounded-neo bg-white/80 shadow-neoInset border border-white/60 p-3">
+                              <p className="text-sm font-semibold text-[#16243D] flex items-center gap-2">
+                                <span>⏰</span> Grace Period (First Miss)
+                              </p>
+                              <p className="text-sm text-[#4B5563] mt-1">
+                                If you miss your first payment, you get a <strong>2-day grace period</strong> with no penalty. Use this time to catch up.
+                              </p>
+                            </div>
 
-                          <div className="rounded-neo bg-[#F5F5F7] shadow-neoInset p-3">
-                            <p className="text-sm font-semibold text-[#16243D] mb-1">🏆 Completion Reward (20% Bonus)</p>
-                            <p className="text-sm text-[#4B5563]">
-                              If you complete your saving streak, you'll receive a <strong>20% bonus</strong> on your total savings! 
-                              Plus, you'll get a share of the Community Reward Pool from all penalties collected from failed plans.
-                            </p>
-                          </div>
+                            <div className="rounded-neo bg-white/80 shadow-neoInset border border-white/60 p-3">
+                              <p className="text-sm font-semibold text-[#16243D] flex items-center gap-2">
+                                <span>⚠️</span> Penalty After Grace Period
+                              </p>
+                              <p className="text-sm text-[#4B5563] mt-1">
+                                After the grace period, if you miss a day, <strong>{selectedLevel.penaltyPercent}% of your daily amount</strong> is deducted from your penalty stake every missed day.
+                              </p>
+                            </div>
 
-                          <div className="rounded-neo bg-[#F5F5F7] shadow-neoInset p-3">
-                            <p className="text-sm font-semibold text-[#16243D] mb-1">💰 Community Reward Pool</p>
-                            <p className="text-sm text-[#4B5563]">
-                              All penalties deducted from missed payments are pooled together and distributed to users who 
-                              successfully complete their saving plans. The more you save, the more you can earn!
-                            </p>
+                            <div className="rounded-neo bg-white/80 shadow-neoInset border border-white/60 p-3">
+                              <p className="text-sm font-semibold text-[#16243D] flex items-center gap-2">
+                                <span>🏆</span> Completion Reward (20% Bonus)
+                              </p>
+                              <p className="text-sm text-[#4B5563] mt-1">
+                                Complete your saving streak and you&apos;ll receive a <strong>20% bonus</strong> on your total savings, plus a share of the Community Reward Pool.
+                              </p>
+                            </div>
+
+                            <div className="rounded-neo bg-white/80 shadow-neoInset border border-white/60 p-3">
+                              <p className="text-sm font-semibold text-[#16243D] flex items-center gap-2">
+                                <span>💰</span> Community Reward Pool
+                              </p>
+                              <p className="text-sm text-[#4B5563] mt-1">
+                                Penalties from missed plans are pooled together and distributed to savers who finish successfully.
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ) : (
-                        <p className="mt-3 text-sm text-[#4B5563]">More details</p>
+                        </Card>
                       )}
-                    </Card>
+                    </div>
 
                     {canCreatePlan && (
                       <PlanCreator
@@ -653,4 +714,3 @@ export default function Home() {
     </main>
   );
 }
-

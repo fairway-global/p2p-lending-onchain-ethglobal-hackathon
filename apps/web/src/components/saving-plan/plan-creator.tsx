@@ -26,6 +26,10 @@ export function PlanCreator({
 
   // CELO uses 18 decimals
   const decimals = 18;
+  const dailyAmountNumber = Number(customDailyAmount) || 0;
+  const totalDaysNumber = Number(customDays) || 0;
+  const completionRewardUsd = dailyAmountNumber * totalDaysNumber * 0.2;
+  const totalSavingsUsd = dailyAmountNumber * totalDaysNumber;
 
   const handleCreatePlan = async () => {
     setIsCreating(true);
@@ -55,55 +59,79 @@ export function PlanCreator({
     }
   }, [isConfirmed, hash, createdPlanId]);
 
-  const totalStake = parseUnits(penaltyStake, decimals);
-  const dailyAmountWei = parseUnits(customDailyAmount, decimals);
-  const totalSavings = dailyAmountWei * BigInt(customDays);
+  const totalStake = parseUnits(penaltyStake || "0", decimals);
+  const scaledStake = totalStake / BigInt(DEMO_SCALE_FACTOR);
+  const scaledStakeUsd = celoToUsd(Number(formatUnits(scaledStake, decimals)));
 
   return (
     <Card className="p-8 rounded-neo shadow-neo bg-[#F5F5F7] border border-white/70 text-[#16243D]">
-      <h3 className="text-2xl font-semibold mb-6 text-[#16243D]">Review Your Plan</h3>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-2xl font-semibold text-[#16243D]">Review Your Plan</h3>
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-[#4B5563] bg-white/80 border border-white/80 rounded-full px-3 py-1 shadow-neoInset">
+          Demo Preview
+        </span>
+      </div>
       
-      <div className="space-y-4 mb-8">
-        <div className="flex justify-between border-b border-white/60 pb-2">
-          <span className="text-sm text-[#4B5563]">Level:</span>
+      <div className="space-y-3 mb-6">
+        <div className="flex items-center justify-between rounded-neo bg-white/80 shadow-neoInset border border-white/60 px-4 py-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Level</span>
           <span className="text-sm font-semibold text-[#16243D]">{selectedLevel.name}</span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Daily Amount:</span>
-          <span className="text-body-m font-bold text-white">
-            {formatUsdWithCelo(customDailyAmount)}
-          </span>
+        <div className="flex items-center justify-between rounded-neo bg-white/80 shadow-neoInset border border-white/60 px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Daily Amount</p>
+            <p className="text-[11px] text-[#6B7280]">Auto-converted to CELO</p>
+          </div>
+          <p className="text-lg font-semibold text-[#16243D]">{formatUsdWithCelo(customDailyAmount)}</p>
         </div>
-        <div className="flex justify-between border-b border-white/60 pb-2">
-          <span className="text-sm text-[#4B5563]">Total Days:</span>
-          <span className="text-sm font-semibold text-[#16243D]">{customDays} days</span>
+        <div className="flex items-center justify-between rounded-neo bg-white/80 shadow-neoInset border border-white/60 px-4 py-3">
+          <span className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Total Days</span>
+          <span className="text-sm font-semibold text-[#16243D]">{totalDaysNumber} days</span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Penalty Stake ({selectedLevel.penaltyPercent}%):</span>
-          <span className="text-body-m font-bold text-celo-error">
-            {formatUsdWithCelo(penaltyStake)}
-          </span>
+      </div>
+
+      <div className="space-y-3 mb-6">
+        <div className="flex items-start justify-between rounded-neo bg-white shadow-neo border border-white/70 px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">
+              Penalty Stake ({selectedLevel.penaltyPercent}%)
+            </p>
+            <p className="text-sm text-[#4B5563]">Held as a safeguard while you save</p>
+          </div>
+          <p className="text-lg font-semibold text-[#D65A5A]">{formatUsdWithCelo(penaltyStake || "0")}</p>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Completion Reward (20%):</span>
-          <span className="text-body-m font-bold text-celo-success">
-            {formatUsdWithCelo((Number(customDailyAmount) * customDays) * 0.2)}
-          </span>
-        </div>
-        <div className="flex justify-between pt-4 border-t-4 border-celo-yellow">
-          <span className="text-body-l font-bold text-white">Total Savings:</span>
-          <span className="text-body-l font-bold text-celo-yellow">
-            {formatUsdWithCelo(Number(customDailyAmount) * customDays)}
-          </span>
-        </div>
-        <div className="mt-4 p-3 border-2 border-celo-yellow bg-black">
-          <p className="text-body-s text-celo-yellow font-bold">
-            ⚠️ Demo Mode: Actual contract amounts will be {DEMO_SCALE_FACTOR}x smaller for POC testing
-          </p>
-          <p className="text-body-xs text-white mt-1">
-            Contract will receive: {formatUsdWithCelo(celoToUsd(Number(formatUnits(totalStake / BigInt(DEMO_SCALE_FACTOR), decimals))))}
+
+        <div className="flex items-start justify-between rounded-neo bg-white shadow-neo border border-white/70 px-4 py-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Completion Reward (20%)</p>
+            <p className="text-sm text-[#4B5563]">Earn a bonus when you finish the streak</p>
+          </div>
+          <p className="text-lg font-semibold text-[#118C76]">
+            {formatUsdWithCelo(completionRewardUsd)}
           </p>
         </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-neo bg-white shadow-neo border border-white/80 px-4 py-4 mb-6">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-[#6B7280]">Total Savings</p>
+          <p className="text-sm text-[#4B5563]">If you stay on track</p>
+        </div>
+        <div className="text-right">
+          <p className="text-xl font-semibold text-[#16243D]">{formatUsdWithCelo(totalSavingsUsd)}</p>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-neo bg-white/80 border border-white/70 shadow-neo p-4 mb-6">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wide text-[#16243D]">
+          <span className="text-[#D65A5A]">⚠️</span> Demo Mode
+        </p>
+        <p className="text-sm text-[#4B5563] mt-1">
+          Actual contract amounts will be {DEMO_SCALE_FACTOR}x smaller for POC testing.
+        </p>
+        <p className="text-sm font-semibold text-[#16243D] mt-2">
+          Contract will receive: <span className="text-[#FBCC5C]">{formatUsdWithCelo(scaledStakeUsd)}</span>
+        </p>
       </div>
 
       {error && (
@@ -115,7 +143,7 @@ export function PlanCreator({
       <Button
         onClick={handleCreatePlan}
         disabled={isPending || isConfirming || isCreating}
-        className="w-full rounded-full bg-[#FBCC5C] text-[#16243D] shadow-neo hover:shadow-neoSoft"
+        className="w-full rounded-full bg-[#FBCC5C] text-[#16243D] shadow-neo hover:shadow-neoSoft border border-white/80"
         variant="default"
       >
         {isPending || isConfirming || isCreating ? (
