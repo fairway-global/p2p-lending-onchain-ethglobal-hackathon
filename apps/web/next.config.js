@@ -8,15 +8,16 @@ const nextConfig = {
 
         // Ignore React Native modules that are imported by @metamask/sdk
         if (!isServer) {
-            // config.resolve.fallback = {
-            //   ...config.resolve.fallback,
-            //   '@react-native-async-storage/async-storage': false,
-            // };
-
             // Use alias to point to our stub module
             config.resolve.alias = {
                 ...config.resolve.alias,
                 '@react-native-async-storage/async-storage': path.resolve(__dirname, 'src/lib/stubs/async-storage.js'),
+            };
+            
+            // Suppress warnings for React Native modules
+            config.resolve.fallback = {
+                ...config.resolve.fallback,
+                '@react-native-async-storage/async-storage': false,
             };
         }
 

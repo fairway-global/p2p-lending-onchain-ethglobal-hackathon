@@ -2,7 +2,7 @@
 // This is only used to satisfy webpack imports from @metamask/sdk
 // In a web environment, we don't actually need this functionality
 
-export default {
+const AsyncStorage = {
   getItem: async () => null,
   setItem: async () => {},
   removeItem: async () => {},
@@ -12,4 +12,7 @@ export default {
   multiSet: async () => {},
   multiRemove: async () => {},
 };
+
+export default AsyncStorage;
+export { AsyncStorage };
 
