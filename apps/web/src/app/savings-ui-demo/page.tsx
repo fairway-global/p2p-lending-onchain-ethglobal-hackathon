@@ -2,15 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
-import {
-  AlarmClockCheck,
-  Camera,
-  Fan,
-  Flashlight,
-  Music2,
-  Sparkles,
-  Wallet,
-} from 'lucide-react';
+import { AlarmClock, Camera, Fan, Flashlight, Music2, Sparkles, Wallet } from 'lucide-react';
 import IconTile from '@/components/ui/IconTile';
 import MiniMetricsBars from '@/components/ui/MiniMetricsBars';
 import NeoButton from '@/components/ui/NeoButton';
@@ -74,7 +66,7 @@ function SavingsUIDemoPage() {
                 <Sparkles className="h-4 w-4 text-[#FBCC5C]" />
               </div>
               <div className="mt-3 grid grid-cols-4 gap-3">
-                <IconTile icon={<AlarmClockCheck className="h-5 w-5" />} label="Reminder" />
+                <IconTile icon={<AlarmClock className="h-5 w-5" />} label="Reminder" />
                 <IconTile icon={<Flashlight className="h-5 w-5" />} label="Boost" />
                 <IconTile icon={<Camera className="h-5 w-5" />} label="Proof" />
                 <IconTile icon={<Fan className="h-5 w-5" />} label="Breeze" />

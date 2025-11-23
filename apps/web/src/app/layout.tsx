@@ -26,8 +26,8 @@ const frame = {
 };
 
 export const metadata: Metadata = {
-  title: 'farcaster-miniapp',
-  description: 'Savelo',
+  title: 'Savelo',
+  description: 'Savelo: daily savings habits made easy.',
   openGraph: {
     title: 'farcaster-miniapp',
     description: 'Savelo',
