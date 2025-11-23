@@ -10,15 +10,7 @@ export function WalletConnector() {
   const [showConnectors, setShowConnectors] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { address, isConnected, connector } = useAccount();
-  const { connect, connectors, isPending, error: connectError } = useConnect({
-    onError: (err) => {
-      console.error("Connection error:", err);
-      setError(err.message);
-    },
-    onSuccess: () => {
-      setError(null);
-    },
-  });
+  const { connect, connectors, isPending, error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
 
   useEffect(() => {
