@@ -10,15 +10,7 @@ export function WalletConnector() {
   const [showConnectors, setShowConnectors] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { address, isConnected, connector } = useAccount();
-  const { connect, connectors, isPending, error: connectError } = useConnect({
-    onError: (err) => {
-      console.error("Connection error:", err);
-      setError(err.message);
-    },
-    onSuccess: () => {
-      setError(null);
-    },
-  });
+  const { connect, connectors, isPending, error: connectError } = useConnect();
   const { disconnect } = useDisconnect();
 
   useEffect(() => {
@@ -37,9 +29,19 @@ export function WalletConnector() {
 
   useEffect(() => {
     if (connectError) {
+      console.error("Connection error:", connectError);
       setError(connectError.message);
+    } else {
+      setError(null);
     }
   }, [connectError]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setError(null);
+      setShowConnectors(false);
+    }
+  }, [isConnected]);
 
   if (!mounted) {
     return (
@@ -109,11 +111,19 @@ export function WalletConnector() {
                     connectorId === "framewallet" ||
                     connectorId === "farcasterminiapp";
                 
+                // Allow Farcaster and injected connectors even if not "ready"
+                const isClickable = connector.ready || 
+                                  connector.id === "injected" || 
+                                  isFarcaster ||
+                                  connector.id === "framewallet" ||
+                                  connector.id === "farcasterminiapp" ||
+                                  connector.id?.toLowerCase().includes("farcaster");
+                
                 return (
                   <button
                     key={connector.id}
                     onClick={async () => {
-                      if (!connector.ready && connector.id !== "injected") {
+                      if (!isClickable) {
                         setError("This wallet is not available. Please install MetaMask or use Farcaster.");
                         return;
                       }
@@ -126,9 +136,9 @@ export function WalletConnector() {
                         setError(err?.message || "Failed to connect wallet");
                       }
                     }}
-                    disabled={isPending}
+                    disabled={isPending || !isClickable}
                     className={`w-full flex items-center gap-3 px-4 py-3 text-left border-2 border-black ${
-                      connector.ready || connector.id === "injected"
+                      isClickable
                         ? "bg-white hover:bg-celo-yellow hover:border-celo-purple cursor-pointer"
                         : "bg-celo-inactive opacity-50 cursor-not-allowed"
                     } transition-all`}
@@ -146,7 +156,7 @@ export function WalletConnector() {
                           ? "Farcaster"
                           : connector.name || "Wallet"}
                       </div>
-                      {!connector.ready && (
+                      {!connector.ready && !isFarcaster && connectorId !== "framewallet" && connectorId !== "farcasterminiapp" && (
                         <div className="text-body-s text-celo-body-copy">Not available</div>
                       )}
                     </div>
@@ -160,7 +170,7 @@ export function WalletConnector() {
               </div>
             )}
             <p className="mt-4 text-body-s text-celo-body-copy">
-              Don't have MetaMask?{" "}
+              Don&apos;t have MetaMask?{" "}
               <a
                 href="https://metamask.io/download/"
                 target="_blank"

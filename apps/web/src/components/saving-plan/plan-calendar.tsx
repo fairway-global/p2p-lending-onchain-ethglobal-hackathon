@@ -137,12 +137,12 @@ export function PlanCalendar({ plan, planId }: PlanCalendarProps) {
         <div className="border-t-4 border-black pt-6">
           <div className="mb-6">
             <p className="text-body-m text-black mb-3 font-bold">
-              Pay today's saving: {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.dailyAmount, decimals))))}
+              Pay today&apos;s saving: {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.dailyAmount, decimals))))}
             </p>
             {daysUntilNext > 0 && (
               <div className="border-2 border-black bg-celo-orange p-3 mb-4">
                 <p className="text-body-s text-black font-bold">
-                  ⚠️ You're {daysUntilNext} day(s) behind. Pay now to keep your streak!
+                  ⚠️ You&apos;re {daysUntilNext} day(s) behind. Pay now to keep your streak!
                 </p>
               </div>
             )}
@@ -184,7 +184,7 @@ export function PlanCalendar({ plan, planId }: PlanCalendarProps) {
           <div className="border-2 border-black bg-celo-success p-6">
             <p className="text-body-l text-black font-bold mb-2">🎉 Congratulations!</p>
             <p className="text-body-m text-black mb-3">
-              You've completed your saving streak! You can now withdraw:
+              You&apos;ve completed your saving streak! You can now withdraw:
             </p>
             <div className="space-y-2 mt-4">
               <div className="flex justify-between border-t-2 border-black pt-2">

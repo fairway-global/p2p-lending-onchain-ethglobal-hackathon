@@ -13,10 +13,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "Docs", href: "https://docs.celo.org", external: true },
-]
+const navLinks: Array<{ name: string; href: string; external?: boolean }> = []
 
 export function Navbar() {
   const pathname = usePathname()

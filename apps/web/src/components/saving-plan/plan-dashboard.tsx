@@ -38,14 +38,14 @@ export function PlanDashboard({ plan, planId }: PlanDashboardProps) {
   // Calculate next payment deadline
   // Each day starts at startTime + (dayNumber * 86400)
   // Deadline is end of current day (start of next day)
-  const calculateNextDeadline = () => {
+  const calculateNextDeadline = useCallback(() => {
     if (startTime === 0) return null;
     const now = Math.floor(Date.now() / 1000);
     const daysSinceStart = Math.floor((now - startTime) / 86400);
     // Deadline is end of current day (start of next day)
     const nextDayStart = startTime + (daysSinceStart + 1) * 86400;
     return nextDayStart;
-  };
+  }, [startTime]);
 
   const handleMissedPayment = useCallback(() => {
     // Reset streak to zero
@@ -131,7 +131,7 @@ export function PlanDashboard({ plan, planId }: PlanDashboardProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isTimerActive, hasPaidToday, startTime, plan.isActive, plan.isCompleted, plan.isFailed]);
+  }, [isTimerActive, hasPaidToday, startTime, plan.isActive, plan.isCompleted, plan.isFailed, calculateNextDeadline]);
 
   // Initialize streak and payment tracking
   useEffect(() => {
@@ -285,7 +285,7 @@ export function PlanDashboard({ plan, planId }: PlanDashboardProps) {
           <div className="text-center space-y-4">
             <div>
               <p className="text-body-l font-bold text-black mb-2">
-                Pay Today's Saving
+                Pay Today&apos;s Saving
               </p>
               <p className="text-body-m text-celo-body-copy">
                 Amount: {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.dailyAmount, decimals))))}
