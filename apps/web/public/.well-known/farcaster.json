@@ -1,0 +1,26 @@
+{
+
+  "accountAssociation": {
+    "header": "eyJmaWQiOjE1MDYxMTYsInR5cGUiOiJhdXRoIiwia2V5IjoiMHhmNjEzZDBDMzhjMGM4Njg0MzY3Y2M1MkU0MkNFNTVmMzIwZTllRDgzIn0",
+    "payload": "eyJkb21haW4iOiJzYXZlbG8uZmFpcndheS5nbG9iYWwifQ",
+    "signature": "oF9bbjnCTjot2lz0U3uLUuzZ1RKwx91+/sWLXqhy0zJ/lj09Bs25B2FSoBNQU4Lxm+EQuKetItydNofzzgjI3Bw="
+  },
+    "miniapp": {
+        "version": "1",
+        "name": "savelo",
+        "iconUrl": "https://i.imgur.com/xyjR004.png",
+        "homeUrl": "https://yoink.party/framesV2/",
+        "imageUrl": "https://i.imgur.com/xyjR004.png",
+        "buttonTitle": "🚩 Start",
+        "splashImageUrl": "https://i.imgur.com/BVMfOWP.png",
+        "splashBackgroundColor": "#f5f0ec",
+        "requiredChains": [
+            "eip155:8453"
+        ],
+        "requiredCapabilities": [
+            "actions.signIn",
+            "wallet.getEthereumProvider",
+            "actions.swapToken"
+        ]
+    }
+}

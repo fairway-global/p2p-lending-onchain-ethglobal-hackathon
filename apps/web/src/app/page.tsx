@@ -1,6 +1,5 @@
 "use client";
 import { useMiniApp } from "@/contexts/miniapp-context";
-import { sdk } from "@farcaster/frame-sdk";
 import { useState, useEffect } from "react";
 import { useAccount, useConnect } from "wagmi";
 import { LevelSelector } from "@/components/saving-plan/level-selector";
@@ -13,6 +12,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { formatUsdWithCelo, celoToUsd } from "@/lib/celo-conversion";
+import { sdk } from '@farcaster/miniapp-sdk'
 
 export default function Home() {
   const { context, isMiniAppReady } = useMiniApp();
@@ -32,7 +32,8 @@ export default function Home() {
   const [currentPlanId, setCurrentPlanId] = useState<bigint | null>(null);
   
   // Calculate penalty stake based on level percentage
-  useEffect(() => {
+  useEffect(() => {   
+    const fun = async () => {
     if (customDailyAmount && selectedLevel) {
       const daily = parseFloat(customDailyAmount);
       const percent = selectedLevel.penaltyPercent / 100;
@@ -45,6 +46,10 @@ export default function Home() {
     } else {
       setPenaltyStake("0");
     }
+
+    await sdk.actions.ready()
+    }
+    fun();
   }, [customDailyAmount, selectedLevel]);
   
   // Set default values when level is selected

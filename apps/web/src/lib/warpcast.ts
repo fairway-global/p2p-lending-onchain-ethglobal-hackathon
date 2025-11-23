@@ -36,29 +36,24 @@ export async function getFarcasterManifest() {
     );
   }
 
-  // Use development fallback values if in development mode and no real values are set
-  const accountAssociation = hasValidAccountAssociation ? {
-    header: env.NEXT_PUBLIC_FARCASTER_HEADER,
-    payload: env.NEXT_PUBLIC_FARCASTER_PAYLOAD,
-    signature: env.NEXT_PUBLIC_FARCASTER_SIGNATURE,
-  } : {
-    // Development fallback - these are placeholder values for local testing
-    header: "eyJmaWQiOjEyMzQ1LCJ0eXBlIjoiY3VzdG9keSIsImtleSI6IjB4ZGV2ZWxvcG1lbnRfa2V5In0",
-    payload: "eyJkb21haW4iOiJsb2NhbGhvc3QifQ",
-    signature: "0xdev_signature_placeholder_for_local_testing_only"
+  // Use the actual Farcaster account association values
+  const accountAssociation = {
+    header: "eyJmaWQiOjE1MDYxMTYsInR5cGUiOiJhdXRoIiwia2V5IjoiMHhmNjEzZDBDMzhjMGM4Njg0MzY3Y2M1MkU0MkNFNTVmMzIwZTllRDgzIn0",
+    payload: "eyJkb21haW4iOiJzYXZlbG8uZmFpcndheS5nbG9iYWwifQ",
+    signature: "oF9bbjnCTjot2lz0U3uLUuzZ1RKwx91+/sWLXqhy0zJ/lj09Bs25B2FSoBNQU4Lxm+EQuKetItydNofzzgjI3Bw="
   };
 
   return {
     accountAssociation,
     miniapp: {
       version: "1",
-      name: frameName,
-      iconUrl: `${appUrl}/icon.png`,
+      name: "savelo",
+      iconUrl: "https://i.imgur.com/xyjR004.png",
       homeUrl: appUrl,
-      imageUrl: `${appUrl}/opengraph-image.png`,
-      buttonTitle: `Launch App`,
-      splashImageUrl: `${appUrl}/opengraph-image.png`,
-      splashBackgroundColor: "#FFFFFF",
+      imageUrl: "https://i.imgur.com/xyjR004.png",
+      buttonTitle: "🚩 Start",
+      splashImageUrl: "https://i.imgur.com/BVMfOWP.png",
+      splashBackgroundColor: "#f5f0ec",
       webhookUrl: `${appUrl}/api/webhook`,
       // Metadata https://github.com/farcasterxyz/miniapps/discussions/191
       subtitle: "Savelo", // 30 characters, no emojis or special characters, short description under app name
@@ -73,6 +68,14 @@ export async function getFarcasterManifest() {
         `${appUrl}/opengraph-image.png`,
       ],
       heroImageUrl: `${appUrl}/opengraph-image.png`, // 1200 x 630px (1.91:1), promotional display image on top of the mini app store
+      requiredChains: [
+        "eip155:8453"
+      ],
+      requiredCapabilities: [
+        "actions.signIn",
+        "wallet.getEthereumProvider",
+        "actions.swapToken"
+      ],
       noindex,
     },
   };
