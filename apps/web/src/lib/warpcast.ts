@@ -6,8 +6,8 @@ import { env } from "@/lib/env";
  * @returns The farcaster manifest for the frame
  */
 export async function getFarcasterManifest() {
-  const frameName = "farcaster-miniapp";
-  const appUrl = env.NEXT_PUBLIC_URL;
+  const frameName = "Savelo";
+  const appUrl = env.NEXT_PUBLIC_URL || "http://localhost:3000";
   const noindex = appUrl.includes("localhost") || appUrl.includes("ngrok") || appUrl.includes("https://dev.");
 
   // Check if account association is properly configured
@@ -19,10 +19,19 @@ export async function getFarcasterManifest() {
   // In development mode, allow placeholder values for testing
   const isDevelopment = env.NEXT_PUBLIC_APP_ENV === "development" || appUrl.includes("localhost");
   
+  // Safely get hostname for error message
+  let hostname = "localhost";
+  try {
+    hostname = new URL(appUrl).hostname;
+  } catch {
+    // If URL parsing fails, use default
+    hostname = "localhost";
+  }
+
   if (!hasValidAccountAssociation && !isDevelopment) {
     throw new Error(
       "Account association not configured. Please generate your account association at: https://farcaster.xyz/~/developers/mini-apps/manifest?domain=" + 
-      new URL(appUrl).hostname + 
+      hostname + 
       " and set the NEXT_PUBLIC_FARCASTER_HEADER, NEXT_PUBLIC_FARCASTER_PAYLOAD, and NEXT_PUBLIC_FARCASTER_SIGNATURE environment variables."
     );
   }

@@ -13,7 +13,16 @@ const nextConfig = {
         // your project has type errors.
         ignoreBuildErrors: false,
     },
-    webpack: (config, { isServer }) => {
+    // Optimize build performance
+    swcMinify: true,
+    webpack: (config, { isServer, dev }) => {
+        // Optimize build performance
+        if (!dev) {
+            config.optimization = {
+                ...config.optimization,
+                moduleIds: 'deterministic',
+            };
+        }
         config.externals.push('pino-pretty', 'lokijs', 'encoding')
 
         // Ignore React Native modules that are imported by @metamask/sdk
