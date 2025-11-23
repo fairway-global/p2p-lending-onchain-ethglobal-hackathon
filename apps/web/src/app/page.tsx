@@ -7,11 +7,12 @@ import { LevelSelector } from "@/components/saving-plan/level-selector";
 import { PlanCreator } from "@/components/saving-plan/plan-creator";
 import { PlanCalendar } from "@/components/saving-plan/plan-calendar";
 import { PlanDashboard } from "@/components/saving-plan/plan-dashboard";
-import { useSavingContract, SAVING_LEVELS, SavingLevel } from "@/hooks/use-saving-contract";
+import { useSavingContract, SAVING_LEVELS, SavingLevel } from "@/contexts/saving-contract-context";
 import { env } from "@/lib/env";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
+import { formatUsdWithCelo, celoToUsd } from "@/lib/celo-conversion";
 
 export default function Home() {
   const { context, isMiniAppReady } = useMiniApp();
@@ -78,18 +79,13 @@ export default function Home() {
   
   const { planData, setSelectedPlanId, refetchPlan, createdPlanId } = useSavingContract();
   
-  // Token address from environment
-  const tokenAddress = (env.NEXT_PUBLIC_TOKEN_ADDRESS || "0x0000000000000000000000000000000000000000") as `0x${string}`;
-  
-  // Debug: Log token address (check browser console)
+  // Debug: Log when createdPlanId changes
   useEffect(() => {
-    console.log("=== Environment Variables Debug ===");
-    console.log("Token Address:", env.NEXT_PUBLIC_TOKEN_ADDRESS);
-    console.log("Token Address (resolved):", tokenAddress);
-    console.log("Contract Address:", env.NEXT_PUBLIC_CONTRACT_ADDRESS);
-    console.log("Is token address valid?", tokenAddress !== "0x0000000000000000000000000000000000000000");
-    console.log("===================================");
-  }, [tokenAddress]);
+    console.log("🔄 createdPlanId changed in page.tsx:", createdPlanId?.toString() || "null", "value:", createdPlanId);
+  }, [createdPlanId]);
+  
+  // Debug: Log on every render to see if component is re-rendering
+  console.log("🖼️ page.tsx render, createdPlanId:", createdPlanId?.toString() || "null");
   
   // Auto-connect wallet when miniapp is ready (only in Farcaster context)
   useEffect(() => {
@@ -132,40 +128,44 @@ export default function Home() {
   }, [planData]);
 
 
-  const handlePlanCreated = () => {
-    // Use the plan ID extracted from the transaction receipt
-    // The useEffect will handle setting the active plan state
-    // This callback is triggered when the transaction is confirmed
-    if (createdPlanId) {
-      // Immediately show dashboard
-      setHasActivePlan(true);
-      setCurrentPlanId(createdPlanId);
-      setSelectedPlanId(createdPlanId);
-      localStorage.setItem("savingPlanId", createdPlanId.toString());
-      setSelectedLevel(null);
-      // Refetch plan data
-      refetchPlan();
-      setTimeout(() => {
-        refetchPlan();
-      }, 2000);
-    }
-  };
 
   // Watch for created plan ID - immediately show dashboard after creation
   useEffect(() => {
-    if (createdPlanId) {
-      setHasActivePlan(true);
-      setCurrentPlanId(createdPlanId);
-      setSelectedPlanId(createdPlanId);
-      localStorage.setItem("savingPlanId", createdPlanId.toString());
-      setSelectedLevel(null);
-      // Refetch plan data immediately and then again after a delay to ensure it's loaded
-      refetchPlan();
-      setTimeout(() => {
+    const planIdValue = createdPlanId;
+    console.log("🔔 useEffect triggered, createdPlanId:", planIdValue?.toString() || "null", "type:", typeof planIdValue, "isTruthy:", !!planIdValue);
+    
+    // Check if we have a valid plan ID (not null, not undefined, and not 0)
+    if (planIdValue !== null && planIdValue !== undefined && planIdValue !== BigInt(0)) {
+      const planIdStr = planIdValue.toString();
+      console.log("🚀 Plan created! Plan ID:", planIdStr);
+      console.log("📊 Navigating to dashboard...");
+      
+      // Only navigate if we don't already have this plan active
+      if (currentPlanId?.toString() !== planIdStr) {
+        console.log("✅ Setting up dashboard for plan:", planIdStr);
+        setHasActivePlan(true);
+        setCurrentPlanId(planIdValue);
+        setSelectedPlanId(planIdValue);
+        localStorage.setItem("savingPlanId", planIdStr);
+        setSelectedLevel(null);
+        setCustomDays("");
+        setCustomDailyAmount("");
+        setPenaltyStake("0");
+        // Refetch plan data immediately and then again after delays to ensure it's loaded
         refetchPlan();
-      }, 2000);
+        setTimeout(() => {
+          refetchPlan();
+        }, 1000);
+        setTimeout(() => {
+          refetchPlan();
+        }, 3000);
+      } else {
+        console.log("⚠️ Plan already active, skipping navigation");
+      }
+    } else {
+      console.log("⏸️ No valid planId yet, waiting...");
     }
-  }, [createdPlanId, setSelectedPlanId, refetchPlan]);
+  }, [createdPlanId, setSelectedPlanId, refetchPlan, currentPlanId]);
 
   if (!isMiniAppReady) {
     return (
@@ -220,12 +220,10 @@ export default function Home() {
                   <PlanDashboard 
                     plan={planData} 
                     planId={currentPlanId}
-                    tokenAddress={tokenAddress}
                   />
                   <PlanCalendar 
                     plan={planData} 
                     planId={currentPlanId}
-                    tokenAddress={tokenAddress}
                   />
                 </>
               ) : (
@@ -297,25 +295,46 @@ export default function Home() {
                     {/* Daily Amount Input */}
                     <Card className="p-6 border-2 border-black bg-celo-dark-tan">
                       <label className="block text-eyebrow font-bold text-black mb-3 uppercase">
-                        Daily Amount (${selectedLevel.minDailyAmount}-${selectedLevel.maxDailyAmount})
+                        Daily Amount in USD
                       </label>
-                      <input
-                        type="number"
-                        min={selectedLevel.minDailyAmount}
-                        max={selectedLevel.maxDailyAmount}
-                        step="0.01"
-                        value={customDailyAmount}
-                        onChange={(e) => setCustomDailyAmount(e.target.value)}
-                        className={`w-full px-4 py-3 border-2 border-black bg-white text-black text-body-m font-inter focus:outline-none focus:ring-2 ${
-                          customDailyAmount && !isValidDailyAmount(customDailyAmount)
-                            ? "border-celo-error focus:ring-celo-error"
-                            : "focus:ring-celo-purple"
-                        }`}
-                        placeholder={`Enter daily amount ($${selectedLevel.minDailyAmount}-$${selectedLevel.maxDailyAmount})`}
-                      />
+                      <div className="mb-2 p-3 border-2 border-celo-purple bg-celo-light-blue">
+                        <p className="text-body-s text-black font-bold mb-1">
+                          💵 Enter amount in US Dollars (${selectedLevel.minDailyAmount}-${selectedLevel.maxDailyAmount})
+                        </p>
+                        <p className="text-body-xs text-celo-body-copy">
+                          We&apos;ll convert it to CELO automatically (1 CELO = $0.16)
+                        </p>
+                      </div>
+                      <div className="relative">
+                        <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-body-l font-bold text-black">$</span>
+                        <input
+                          type="number"
+                          min={selectedLevel.minDailyAmount}
+                          max={selectedLevel.maxDailyAmount}
+                          step="0.01"
+                          value={customDailyAmount}
+                          onChange={(e) => setCustomDailyAmount(e.target.value)}
+                          className={`w-full pl-8 pr-4 py-3 border-2 border-black bg-white text-black text-body-m font-inter focus:outline-none focus:ring-2 ${
+                            customDailyAmount && !isValidDailyAmount(customDailyAmount)
+                              ? "border-celo-error focus:ring-celo-error"
+                              : "focus:ring-celo-purple"
+                          }`}
+                          placeholder={`${selectedLevel.minDailyAmount}.00`}
+                        />
+                      </div>
+                      {customDailyAmount && isValidDailyAmount(customDailyAmount) && (
+                        <div className="mt-3 p-3 border-2 border-celo-yellow bg-celo-yellow">
+                          <p className="text-body-m text-black font-bold">
+                            💰 Equivalent: {formatUsdWithCelo(customDailyAmount)}
+                          </p>
+                          <p className="text-body-xs text-celo-body-copy mt-1">
+                            Amount shown in USD with CELO equivalent in parentheses
+                          </p>
+                        </div>
+                      )}
                       {customDailyAmount && !isValidDailyAmount(customDailyAmount) && (
                         <p className="mt-2 text-body-s text-celo-error font-bold">
-                          Daily amount must be between ${selectedLevel.minDailyAmount} and ${selectedLevel.maxDailyAmount}
+                          Daily amount must be between ${selectedLevel.minDailyAmount} and ${selectedLevel.maxDailyAmount} USD
                         </p>
                       )}
                     </Card>
@@ -328,7 +347,7 @@ export default function Home() {
                           <p className="text-body-s text-white">Automatically calculated as {selectedLevel.penaltyPercent}% of daily amount</p>
                         </div>
                         <div className="text-right">
-                          <p className="text-h4 font-alpina text-celo-yellow">${penaltyStake}</p>
+                          <p className="text-h4 font-alpina text-celo-yellow">{formatUsdWithCelo(penaltyStake)}</p>
                         </div>
                       </div>
                     </Card>
@@ -358,8 +377,8 @@ export default function Home() {
                         <div className="border-l-4 border-celo-success pl-4">
                           <p className="text-body-m font-bold text-white mb-1">🏆 Completion Reward (20% Bonus)</p>
                           <p className="text-body-s text-white">
-                            If you complete your saving streak, you'll receive a <strong>20% bonus</strong> on your total savings! 
-                            Plus, you'll get a share of the Community Reward Pool from all penalties collected from failed plans.
+                            If you complete your saving streak, you&apos;ll receive a <strong>20% bonus</strong> on your total savings! 
+                            Plus, you&apos;ll get a share of the Community Reward Pool from all penalties collected from failed plans.
                           </p>
                         </div>
 
@@ -378,9 +397,7 @@ export default function Home() {
                         selectedLevel={selectedLevel}
                         customDays={parseInt(customDays)}
                         customDailyAmount={customDailyAmount}
-                        tokenAddress={tokenAddress}
                         penaltyStake={penaltyStake}
-                        onPlanCreated={handlePlanCreated}
                       />
                     )}
                   </div>
@@ -431,3 +448,4 @@ export default function Home() {
     </main>
   );
 }
+

@@ -5,6 +5,7 @@ import { parseUnits, formatUnits, decodeEventLog } from "viem";
 import { useState, useEffect } from "react";
 import SimpleSavingPlanABI from "@/lib/abi/SimpleSavingPlan.json";
 import ERC20ABI from "@/lib/abi/ERC20.json";
+import { scaleForDemo } from "@/lib/celo-conversion";
 
 import { env } from "@/lib/env";
 
@@ -13,10 +14,10 @@ const CONTRACT_ADDRESS = (env.NEXT_PUBLIC_CONTRACT_ADDRESS || "0x000000000000000
 
 export interface Plan {
   user: `0x${string}`;
-  token: `0x${string}`;
   dailyAmount: bigint;
   totalDays: bigint;
   penaltyStake: bigint;
+  penaltyPercent: bigint;
   currentDay: bigint;
   missedDays: bigint;
   isActive: boolean;
@@ -80,6 +81,7 @@ export function useSavingContract() {
   useEffect(() => {
     if (receipt && publicClient) {
       try {
+        console.log("📋 Processing transaction receipt, logs:", receipt.logs.length);
         // Look for PlanCreated event in the logs
         for (const log of receipt.logs) {
           try {
@@ -88,16 +90,26 @@ export function useSavingContract() {
               data: log.data,
               topics: log.topics,
             });
+            console.log("🔍 Decoded event:", decoded.eventName, decoded);
             // If the contract emits a PlanCreated event with planId, extract it
-            if (decoded.eventName === "PlanCreated" && (decoded as any).args?.planId) {
-              setCreatedPlanId((decoded as any).args.planId);
+            if (decoded.eventName === "PlanCreated") {
+              const planId = (decoded as any).args?.planId;
+              if (planId !== undefined) {
+                console.log("✅ Found PlanCreated event with planId:", planId.toString());
+                console.log("🔄 Setting createdPlanId state to:", planId.toString());
+                setCreatedPlanId(planId);
+                console.log("✅ State update triggered for createdPlanId");
+              } else {
+                console.warn("⚠️ PlanCreated event found but planId is missing");
+              }
             }
           } catch (e) {
             // Not the event we're looking for, continue
+            // console.log("Event decode failed (expected for non-PlanCreated events):", e);
           }
         }
       } catch (error) {
-        console.error("Error decoding transaction receipt:", error);
+        console.error("❌ Error decoding transaction receipt:", error);
       }
     }
   }, [receipt, publicClient]);
@@ -113,68 +125,53 @@ export function useSavingContract() {
     },
   }) as { data: Plan | undefined; refetch: () => void };
 
-  // Approve token for contract
-  const approveToken = async (tokenAddress: `0x${string}`, amount: string, decimals: number = 18) => {
-    if (!isConnected || !address) {
-      throw new Error("Wallet not connected");
-    }
-
-    const amountWei = parseUnits(amount, decimals);
-    
-    return writeContract({
-      address: tokenAddress,
-      abi: ERC20ABI,
-      functionName: "approve",
-      args: [CONTRACT_ADDRESS, amountWei],
-    });
-  };
-
-  // Create a new saving plan
+  // Create a new saving plan (using native CELO)
   const createPlan = async (
-    tokenAddr: `0x${string}`,
     dailyAmount: string,
     totalDays: number,
     penaltyStake: string,
-    tokenDecimals: number = 18
+    penaltyPercent: number
   ) => {
     if (!isConnected || !address) {
       throw new Error("Wallet not connected");
     }
 
-    // First approve the penalty stake
-    const stakeAmount = parseUnits(penaltyStake, tokenDecimals);
-    await approveToken(tokenAddr, penaltyStake, tokenDecimals);
-
-    // Wait for approval transaction
-    // Note: In production, you'd want to wait for the approval tx to confirm first
-    // For now, we'll proceed assuming approval will succeed
-
-    // Create the plan
-    const dailyAmountWei = parseUnits(dailyAmount, tokenDecimals);
+    // Convert amounts to wei (CELO uses 18 decimals)
+    const dailyAmountWei = parseUnits(dailyAmount, 18);
+    const stakeAmount = parseUnits(penaltyStake, 18);
+    
+    // Scale down for demo/POC (divide by 1000)
+    const scaledDailyAmount = scaleForDemo(dailyAmountWei);
+    const scaledStake = scaleForDemo(stakeAmount);
     
     return writeContract({
       address: CONTRACT_ADDRESS,
       abi: SimpleSavingPlanABI,
       functionName: "createPlan",
-      args: [tokenAddr, dailyAmountWei, BigInt(totalDays), stakeAmount],
+      args: [scaledDailyAmount, BigInt(totalDays), scaledStake, BigInt(penaltyPercent)],
+      value: scaledStake, // Send scaled penalty stake as native CELO for demo
     });
   };
 
-  // Pay daily saving
-  const payDaily = async (planId: bigint, tokenAddr: `0x${string}`, dailyAmount: string, tokenDecimals: number = 18) => {
+  // Pay daily saving (using native CELO)
+  const payDaily = async (planId: bigint, dailyAmount: string) => {
     if (!isConnected || !address) {
       throw new Error("Wallet not connected");
     }
 
-    // First approve the daily amount
-    await approveToken(tokenAddr, dailyAmount, tokenDecimals);
+    // Convert daily amount to wei (CELO uses 18 decimals)
+    const dailyAmountWei = parseUnits(dailyAmount, 18);
+    
+    // Scale down for demo/POC (divide by 1000)
+    const scaledDailyAmount = scaleForDemo(dailyAmountWei);
 
-    // Pay daily
+    // Pay daily with native CELO
     return writeContract({
       address: CONTRACT_ADDRESS,
       abi: SimpleSavingPlanABI,
       functionName: "payDaily",
       args: [planId],
+      value: scaledDailyAmount, // Send scaled daily amount as native CELO for demo
     });
   };
 
@@ -226,7 +223,6 @@ export function useSavingContract() {
     checkAndDeductPenalty,
     markFailed,
     withdraw,
-    approveToken,
     planData,
     refetchPlan,
     selectedPlanId,

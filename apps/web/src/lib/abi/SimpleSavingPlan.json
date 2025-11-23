@@ -167,12 +167,6 @@
       },
       {
         "indexed": false,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
-        "indexed": false,
         "internalType": "uint256",
         "name": "dailyAmount",
         "type": "uint256"
@@ -209,12 +203,6 @@
   {
     "anonymous": false,
     "inputs": [
-      {
-        "indexed": true,
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
       {
         "indexed": false,
         "internalType": "uint256",
@@ -305,11 +293,6 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "dailyAmount",
         "type": "uint256"
@@ -323,6 +306,11 @@
         "internalType": "uint256",
         "name": "penaltyStake",
         "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "penaltyPercent",
+        "type": "uint256"
       }
     ],
     "name": "createPlan",
@@ -333,16 +321,11 @@
         "type": "uint256"
       }
     ],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
     "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
       {
         "internalType": "address",
         "name": "to",
@@ -372,11 +355,6 @@
             "type": "address"
           },
           {
-            "internalType": "address",
-            "name": "token",
-            "type": "address"
-          },
-          {
             "internalType": "uint256",
             "name": "dailyAmount",
             "type": "uint256"
@@ -389,6 +367,11 @@
           {
             "internalType": "uint256",
             "name": "penaltyStake",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "penaltyPercent",
             "type": "uint256"
           },
           {
@@ -446,13 +429,7 @@
     "type": "function"
   },
   {
-    "inputs": [
-      {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      }
-    ],
+    "inputs": [],
     "name": "getRewardPoolBalance",
     "outputs": [
       {
@@ -537,7 +514,7 @@
     ],
     "name": "payDaily",
     "outputs": [],
-    "stateMutability": "nonpayable",
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -569,11 +546,6 @@
         "type": "address"
       },
       {
-        "internalType": "address",
-        "name": "token",
-        "type": "address"
-      },
-      {
         "internalType": "uint256",
         "name": "dailyAmount",
         "type": "uint256"
@@ -586,6 +558,11 @@
       {
         "internalType": "uint256",
         "name": "penaltyStake",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "penaltyPercent",
         "type": "uint256"
       },
       {

@@ -1,38 +1,24 @@
 "use client";
 
-import { Plan } from "@/hooks/use-saving-contract";
+import { Plan, useSavingContract } from "@/contexts/saving-contract-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { formatUnits } from "viem";
-import { useSavingContract } from "@/hooks/use-saving-contract";
 import { useState } from "react";
-import { useReadContract } from "wagmi";
-import ERC20ABI from "@/lib/abi/ERC20.json";
+import { formatUsdWithCelo, celoToUsd } from "@/lib/celo-conversion";
 
 interface PlanCalendarProps {
   plan: Plan;
   planId: bigint;
-  tokenAddress: `0x${string}`;
 }
 
-export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) {
+export function PlanCalendar({ plan, planId }: PlanCalendarProps) {
   const { payDaily, withdraw, isPending, isConfirming, isConfirmed, error, hash, refetchPlan } = useSavingContract();
   const [isPaying, setIsPaying] = useState(false);
   const [isWithdrawing, setIsWithdrawing] = useState(false);
 
-  const { data: tokenSymbol } = useReadContract({
-    address: tokenAddress,
-    abi: ERC20ABI,
-    functionName: "symbol",
-  });
-
-  const { data: tokenDecimals } = useReadContract({
-    address: tokenAddress,
-    abi: ERC20ABI,
-    functionName: "decimals",
-  }) as { data: number | undefined };
-
-  const decimals = tokenDecimals || 18;
+  // CELO uses 18 decimals
+  const decimals = 18;
   const totalDays = Number(plan.totalDays);
   const currentDay = Number(plan.currentDay);
   const missedDays = Number(plan.missedDays);
@@ -42,7 +28,7 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
   const handlePayDaily = async () => {
     setIsPaying(true);
     try {
-      await payDaily(planId, tokenAddress, formatUnits(plan.dailyAmount, decimals), decimals);
+      await payDaily(planId, formatUnits(plan.dailyAmount, decimals));
     } catch (err) {
       console.error("Error paying daily:", err);
       alert("Failed to pay daily. Please try again.");
@@ -151,7 +137,7 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
         <div className="border-t-4 border-black pt-6">
           <div className="mb-6">
             <p className="text-body-m text-black mb-3 font-bold">
-              Pay today's saving: {formatUnits(plan.dailyAmount, decimals)} {tokenSymbol || "tokens"}
+              Pay today's saving: {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.dailyAmount, decimals))))}
             </p>
             {daysUntilNext > 0 && (
               <div className="border-2 border-black bg-celo-orange p-3 mb-4">
@@ -177,7 +163,7 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
             {isPending || isConfirming || isPaying ? (
               <>
                 <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin mr-2"></div>
-                {isPending ? "Approving..." : isConfirming ? "Processing Payment..." : "Processing..."}
+                {isPending ? "Processing Payment..." : isConfirming ? "Confirming..." : "Processing..."}
               </>
             ) : (
               "Pay Today's Saving"
@@ -204,19 +190,19 @@ export function PlanCalendar({ plan, planId, tokenAddress }: PlanCalendarProps) 
               <div className="flex justify-between border-t-2 border-black pt-2">
                 <span className="text-body-m text-black font-bold">Your Savings:</span>
                 <span className="text-body-m text-black font-bold">
-                  {formatUnits(plan.dailyAmount * plan.currentDay, decimals)} {tokenSymbol || "tokens"}
+                  {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.dailyAmount * plan.currentDay, decimals))))}
                 </span>
               </div>
               <div className="flex justify-between border-t-2 border-black pt-2">
                 <span className="text-body-m text-black font-bold">Penalty Stake (Returned):</span>
                 <span className="text-body-m text-black font-bold">
-                  {formatUnits(plan.penaltyStake, decimals)} {tokenSymbol || "tokens"}
+                  {formatUsdWithCelo(celoToUsd(Number(formatUnits(plan.penaltyStake, decimals))))}
                 </span>
               </div>
               <div className="flex justify-between border-t-4 border-celo-yellow pt-2 bg-celo-yellow px-3 py-2">
                 <span className="text-body-l text-black font-bold">20% Completion Bonus:</span>
                 <span className="text-body-l text-black font-bold">
-                  {formatUnits((plan.dailyAmount * plan.currentDay * BigInt(20)) / BigInt(100), decimals)} {tokenSymbol || "tokens"}
+                  {formatUsdWithCelo(celoToUsd(Number(formatUnits((plan.dailyAmount * plan.currentDay * BigInt(20)) / BigInt(100), decimals))))}
                 </span>
               </div>
               <div className="flex justify-between border-t-4 border-black pt-2 bg-celo-light-blue px-3 py-2">

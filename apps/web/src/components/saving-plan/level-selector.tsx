@@ -1,6 +1,6 @@
 "use client";
 
-import { SavingLevel } from "@/hooks/use-saving-contract";
+import { SavingLevel } from "@/contexts/saving-contract-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 

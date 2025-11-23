@@ -1,76 +1,40 @@
 "use client";
 
-import { useState } from "react";
-import { SavingLevel } from "@/hooks/use-saving-contract";
+import { useState, useEffect } from "react";
+import { SavingLevel } from "@/contexts/saving-contract-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { useSavingContract } from "@/hooks/use-saving-contract";
+import { useSavingContract } from "@/contexts/saving-contract-context";
 import { parseUnits, formatUnits } from "viem";
-import { useReadContract } from "wagmi";
-import ERC20ABI from "@/lib/abi/ERC20.json";
+import { celoToUsd, formatUsdWithCelo, DEMO_SCALE_FACTOR } from "@/lib/celo-conversion";
 
 interface PlanCreatorProps {
   selectedLevel: SavingLevel;
   customDays: number;
   customDailyAmount: string;
-  tokenAddress: `0x${string}`;
   penaltyStake: string;
-  onPlanCreated: () => void;
 }
 
 export function PlanCreator({
   selectedLevel,
   customDays,
   customDailyAmount,
-  tokenAddress,
   penaltyStake,
-  onPlanCreated,
 }: PlanCreatorProps) {
-  const { createPlan, isPending, isConfirming, isConfirmed, error, hash } = useSavingContract();
+  const { createPlan, isPending, isConfirming, isConfirmed, error, hash, createdPlanId } = useSavingContract();
   const [isCreating, setIsCreating] = useState(false);
 
-  // Get token info
-  const { data: tokenSymbol } = useReadContract({
-    address: tokenAddress,
-    abi: ERC20ABI,
-    functionName: "symbol",
-  });
-
-  const { data: tokenDecimals } = useReadContract({
-    address: tokenAddress,
-    abi: ERC20ABI,
-    functionName: "decimals",
-  }) as { data: number | undefined };
-
-  const decimals = tokenDecimals || 18;
+  // CELO uses 18 decimals
+  const decimals = 18;
 
   const handleCreatePlan = async () => {
-    // Debug logging
-    console.log("Token Address in PlanCreator:", tokenAddress);
-    console.log("Is zero address?", tokenAddress === "0x0000000000000000000000000000000000000000");
-    
-    if (!tokenAddress || tokenAddress === "0x0000000000000000000000000000000000000000") {
-      const envValue = process.env.NEXT_PUBLIC_TOKEN_ADDRESS;
-      alert(
-        "Please set a valid token address in your .env.local file.\n\n" +
-        "Current value: " + (envValue || "NOT SET") + "\n\n" +
-        "Add this line to apps/web/.env.local:\n" +
-        "NEXT_PUBLIC_TOKEN_ADDRESS=0x874069Fa1Eb16D44d622F2e0Ca25eeA172369bC1\n\n" +
-        "(This is cUSD on Celo Alfajores testnet)\n\n" +
-        "IMPORTANT: Restart your dev server after creating/updating .env.local\n" +
-        "Stop the server (Ctrl+C) and run 'npm run dev' again."
-      );
-      return;
-    }
-
     setIsCreating(true);
     try {
       await createPlan(
-        tokenAddress,
         customDailyAmount,
         customDays,
         penaltyStake,
-        decimals
+        selectedLevel.penaltyPercent
       );
     } catch (err) {
       console.error("Error creating plan:", err);
@@ -80,10 +44,16 @@ export function PlanCreator({
     }
   };
 
-  // Watch for successful transaction
-  if (isConfirmed && hash) {
-    onPlanCreated();
-  }
+  // Log when transaction is confirmed and plan ID is extracted
+  // Navigation is handled by the useEffect in page.tsx that watches createdPlanId
+  useEffect(() => {
+    if (isConfirmed && hash && createdPlanId) {
+      console.log("✅ Transaction confirmed with planId:", createdPlanId.toString());
+      console.log("📋 Navigation will be handled automatically by page.tsx useEffect");
+    } else if (isConfirmed && hash && !createdPlanId) {
+      console.log("⏳ Transaction confirmed but waiting for planId extraction...");
+    }
+  }, [isConfirmed, hash, createdPlanId]);
 
   const totalStake = parseUnits(penaltyStake, decimals);
   const dailyAmountWei = parseUnits(customDailyAmount, decimals);
@@ -101,7 +71,7 @@ export function PlanCreator({
         <div className="flex justify-between border-b-2 border-white pb-2">
           <span className="text-body-m text-white">Daily Amount:</span>
           <span className="text-body-m font-bold text-white">
-            ${customDailyAmount} {tokenSymbol ? `(${tokenSymbol})` : ""}
+            {formatUsdWithCelo(customDailyAmount)}
           </span>
         </div>
         <div className="flex justify-between border-b-2 border-white pb-2">
@@ -111,20 +81,28 @@ export function PlanCreator({
         <div className="flex justify-between border-b-2 border-white pb-2">
           <span className="text-body-m text-white">Penalty Stake ({selectedLevel.penaltyPercent}%):</span>
           <span className="text-body-m font-bold text-celo-error">
-            ${penaltyStake} {tokenSymbol ? `(${formatUnits(totalStake, decimals)} ${tokenSymbol})` : ""}
+            {formatUsdWithCelo(penaltyStake)}
           </span>
         </div>
         <div className="flex justify-between border-b-2 border-white pb-2">
           <span className="text-body-m text-white">Completion Reward (20%):</span>
           <span className="text-body-m font-bold text-celo-success">
-            ${((Number(customDailyAmount) * customDays) * 0.2).toFixed(2)} {tokenSymbol ? `(${formatUnits(totalSavings * BigInt(20) / BigInt(100), decimals)} ${tokenSymbol})` : ""}
+            {formatUsdWithCelo((Number(customDailyAmount) * customDays) * 0.2)}
           </span>
         </div>
         <div className="flex justify-between pt-4 border-t-4 border-celo-yellow">
           <span className="text-body-l font-bold text-white">Total Savings:</span>
           <span className="text-body-l font-bold text-celo-yellow">
-            ${(Number(customDailyAmount) * customDays).toFixed(2)} {tokenSymbol ? `(${formatUnits(totalSavings, decimals)} ${tokenSymbol})` : ""}
+            {formatUsdWithCelo(Number(customDailyAmount) * customDays)}
           </span>
+        </div>
+        <div className="mt-4 p-3 border-2 border-celo-yellow bg-black">
+          <p className="text-body-s text-celo-yellow font-bold">
+            ⚠️ Demo Mode: Actual contract amounts will be {DEMO_SCALE_FACTOR}x smaller for POC testing
+          </p>
+          <p className="text-body-xs text-white mt-1">
+            Contract will receive: {formatUsdWithCelo(celoToUsd(Number(formatUnits(totalStake / BigInt(DEMO_SCALE_FACTOR), decimals))))}
+          </p>
         </div>
       </div>
 
@@ -143,7 +121,7 @@ export function PlanCreator({
         {isPending || isConfirming || isCreating ? (
           <>
             <div className="w-4 h-4 border-2 border-black border-t-transparent animate-spin mr-2"></div>
-            {isPending ? "Approving..." : isConfirming ? "Creating Plan..." : "Processing..."}
+            {isPending ? "Creating Plan..." : isConfirming ? "Confirming..." : "Processing..."}
           </>
         ) : (
           "Create Plan & Stake"
