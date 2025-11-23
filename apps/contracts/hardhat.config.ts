@@ -16,7 +16,9 @@ const config: HardhatUserConfig = {
     // Celo Mainnet
     celo: {
       url: "https://forno.celo.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: process.env.PRIVATE_KEY 
+        ? [process.env.PRIVATE_KEY.replace(/^0x/, "").trim()] 
+        : [],
       chainId: 42220,
       timeout: 120000, // 120 seconds
       httpHeaders: {},
@@ -24,7 +26,9 @@ const config: HardhatUserConfig = {
     // Celo Alfajores Testnet
     alfajores: {
       url: process.env.ALFAJORES_RPC_URL || "https://alfajores-forno.celo-testnet.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: process.env.PRIVATE_KEY 
+        ? [process.env.PRIVATE_KEY.replace(/^0x/, "").trim()] 
+        : [],
       chainId: 44787,
       timeout: 120000, // 120 seconds
       httpHeaders: {},
@@ -35,7 +39,9 @@ const config: HardhatUserConfig = {
     // Celo Sepolia Testnet
     sepolia: {
       url: "https://forno.celo-sepolia.celo-testnet.org",
-      accounts: process.env.PRIVATE_KEY ? [process.env.PRIVATE_KEY] : [],
+      accounts: process.env.PRIVATE_KEY 
+        ? [process.env.PRIVATE_KEY.replace(/^0x/, "").trim()] 
+        : [],
       chainId: 11142220,
       timeout: 120000, // 120 seconds
       httpHeaders: {},

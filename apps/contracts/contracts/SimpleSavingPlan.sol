@@ -154,61 +154,44 @@ contract SimpleSavingPlan is ReentrancyGuard, Ownable {
         require(p.isActive && !p.isFailed && !p.isCompleted, "plan-not-active");
         require(p.lastPaidAt > 0, "no-payments-yet");
 
-        uint256 timeSinceLastPayment = block.timestamp - p.lastPaidAt;
-        
         // Check if payment is overdue (more than 1 day since last payment)
-        if (timeSinceLastPayment > 1 days) {
-            uint256 daysOverdue = timeSinceLastPayment / 1 days;
-            
+        if (block.timestamp - p.lastPaidAt > 1 days) {
             // Check if this is the first miss
             if (p.firstMissTime == 0) {
                 p.firstMissTime = block.timestamp;
             }
 
             // Check if grace period has expired
-            bool inGracePeriod = !p.hasUsedGracePeriod && 
-                                 block.timestamp <= p.firstMissTime + GRACE_PERIOD;
-
-            if (!inGracePeriod) {
+            if (p.hasUsedGracePeriod || block.timestamp > p.firstMissTime + GRACE_PERIOD) {
                 // Grace period expired, deduct penalties
                 p.hasUsedGracePeriod = true;
                 
-                // Calculate how many days to penalize (days overdue minus grace period)
-                uint256 daysToPenalize = daysOverdue;
-                if (p.firstMissTime > 0 && block.timestamp > p.firstMissTime + GRACE_PERIOD) {
-                    // Subtract grace period days
-                    uint256 graceExpiredAt = p.firstMissTime + GRACE_PERIOD;
-                    if (block.timestamp > graceExpiredAt) {
-                        daysToPenalize = (block.timestamp - graceExpiredAt) / 1 days;
+                // Calculate days to penalize
+                uint256 graceExpiredAt = p.firstMissTime + GRACE_PERIOD;
+                uint256 daysToPenalize = block.timestamp > graceExpiredAt 
+                    ? (block.timestamp - graceExpiredAt) / 1 days 
+                    : 0;
+
+                if (daysToPenalize > 0) {
+                    // Calculate total penalty (10% of daily amount per day)
+                    uint256 totalPenalty = (p.dailyAmount * 10 * daysToPenalize) / 100;
+
+                    // Only deduct if there's stake remaining
+                    if (totalPenalty > 0 && p.penaltyStake >= totalPenalty) {
+                        p.penaltyStake -= totalPenalty;
+                        p.missedDays += daysToPenalize;
+                        rewardPool[p.token] += totalPenalty;
+                        
+                        emit PenaltyDeducted(planId, totalPenalty, p.penaltyStake);
+                        emit RewardPoolContributed(p.token, totalPenalty);
                     }
-                }
 
-                // Deduct penalty for each missed day
-                // Penalty is calculated as percentage of daily amount
-                // Frontend determines the percentage based on level (10%, 15%, 20%)
-                // Contract uses a base penalty rate - frontend should call checkAndDeductPenalty
-                // with appropriate timing to match the level's penalty percentage
-                // For now, we use 10% as minimum - frontend can handle different rates
-                uint256 penaltyPerDay = (p.dailyAmount * 10) / 100; // 10% of daily amount (minimum)
-                uint256 totalPenalty = penaltyPerDay * daysToPenalize;
-
-                // Only deduct if there's stake remaining
-                if (totalPenalty > 0 && p.penaltyStake >= totalPenalty) {
-                    p.penaltyStake -= totalPenalty;
-                    p.missedDays += daysToPenalize;
-                    
-                    // Add penalty to reward pool
-                    rewardPool[p.token] += totalPenalty;
-                    
-                    emit PenaltyDeducted(planId, totalPenalty, p.penaltyStake);
-                    emit RewardPoolContributed(p.token, totalPenalty);
-                }
-
-                // If stake is depleted, mark as failed
-                if (p.penaltyStake == 0) {
-                    p.isFailed = true;
-                    p.isActive = false;
-                    emit PlanFailed(planId);
+                    // If stake is depleted, mark as failed
+                    if (p.penaltyStake == 0) {
+                        p.isFailed = true;
+                        p.isActive = false;
+                        emit PlanFailed(planId);
+                    }
                 }
             }
         }
@@ -270,28 +253,10 @@ contract SimpleSavingPlan is ReentrancyGuard, Ownable {
         require(p.user == msg.sender, "not-plan-owner");
         require(p.isCompleted, "plan-not-completed");
 
+        // Calculate amounts
         uint256 savedAmount = p.dailyAmount * p.totalDays;
-        uint256 rewardBonus = (savedAmount * REWARD_PERCENTAGE_BPS) / 10000; // 20% bonus
-        
-        // Calculate reward pool share
-        // For simplicity, distribute a portion of reward pool to this completer
-        uint256 rewardPoolShare = 0;
-        if (rewardPool[p.token] > 0 && !hasClaimedReward[planId]) {
-            // Get count of unclaimed completed plans for this token
-            uint256 unclaimedCount = _getUnclaimedCompletedCount(p.token);
-            if (unclaimedCount > 0) {
-                // Distribute equally among all unclaimed completers
-                rewardPoolShare = rewardPool[p.token] / unclaimedCount;
-                // Ensure we don't exceed available pool
-                if (rewardPoolShare > rewardPool[p.token]) {
-                    rewardPoolShare = rewardPool[p.token];
-                }
-                rewardPool[p.token] -= rewardPoolShare;
-                hasClaimedReward[planId] = true;
-                emit RewardPoolDistributed(planId, msg.sender, rewardPoolShare);
-            }
-        }
-
+        uint256 rewardBonus = (savedAmount * REWARD_PERCENTAGE_BPS) / 10000;
+        uint256 rewardPoolShare = _calculateRewardPoolShare(planId, p.token, msg.sender);
         uint256 totalToWithdraw = savedAmount + rewardBonus + rewardPoolShare + p.penaltyStake;
 
         // Zero out to prevent reentrancy
@@ -303,6 +268,31 @@ contract SimpleSavingPlan is ReentrancyGuard, Ownable {
         IERC20(p.token).transfer(msg.sender, totalToWithdraw);
 
         emit Claimed(planId, msg.sender, savedAmount, rewardBonus, rewardPoolShare);
+    }
+
+    /**
+     * @notice Internal function to calculate reward pool share
+     */
+    function _calculateRewardPoolShare(uint256 planId, address token, address recipient) internal returns (uint256) {
+        if (rewardPool[token] == 0 || hasClaimedReward[planId]) {
+            return 0;
+        }
+        
+        uint256 unclaimedCount = _getUnclaimedCompletedCount(token);
+        if (unclaimedCount == 0) {
+            return 0;
+        }
+        
+        uint256 share = rewardPool[token] / unclaimedCount;
+        if (share > rewardPool[token]) {
+            share = rewardPool[token];
+        }
+        
+        rewardPool[token] -= share;
+        hasClaimedReward[planId] = true;
+        emit RewardPoolDistributed(planId, recipient, share);
+        
+        return share;
     }
 
     /**
