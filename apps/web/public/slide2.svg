@@ -1,0 +1,38 @@
+<!-- stake-slashed-miss.svg -->
+<svg width="260" height="180" viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Card background -->
+  <rect x="12" y="12" width="236" height="156" rx="20" fill="#F5F5F7"></rect>
+
+  <!-- Platform -->
+  <rect x="60" y="110" width="140" height="18" rx="9" fill="#E5E7EB"></rect>
+
+  <!-- Coin stack (left, intact) -->
+  <g transform="translate(86,84)">
+    <rect x="-16" y="22" width="32" height="22" rx="8" fill="#FED7A5"></rect>
+    <ellipse cx="0" cy="22" rx="16" ry="7" fill="#FBBF77"></ellipse>
+    <ellipse cx="0" cy="16" rx="16" ry="7" fill="#FBCC5C"></ellipse>
+  </g>
+
+  <!-- Coin stack (right, slashed) -->
+  <g transform="translate(156,84)">
+    <!-- lower part -->
+    <rect x="-16" y="28" width="32" height="16" rx="6" fill="#FED7A5"></rect>
+    <ellipse cx="0" cy="28" rx="16" ry="7" fill="#FBBF77"></ellipse>
+    <!-- upper, offset as if sliding away -->
+    <g transform="translate(4,-10) rotate(-10)">
+      <rect x="-16" y="22" width="32" height="10" rx="5" fill="#FBCC5C"></rect>
+      <ellipse cx="0" cy="22" rx="16" ry="6" fill="#FBCC5C"></ellipse>
+    </g>
+  </g>
+
+  <!-- Red slash -->
+  <rect x="74" y="70" width="144" height="8" rx="4" transform="rotate(-22 74 70)" fill="#D65A5A"></rect>
+
+  <!-- Faded shield above (protection weakened) -->
+  <path d="M130 44 C118 44 110 38 110 32 V28 H150 V32 C150 38 142 44 130 44 Z" fill="#FEE2E2"></path>
+
+  <!-- Small warning icon -->
+  <circle cx="70" cy="54" r="10" fill="#FFFFFF" stroke="#F97373" stroke-width="2"></circle>
+  <line x1="70" y1="49" x2="70" y2="57" stroke="#D65A5A" stroke-width="2" stroke-linecap="round"></line>
+  <circle cx="70" cy="61" r="2" fill="#D65A5A"></circle>
+</svg>

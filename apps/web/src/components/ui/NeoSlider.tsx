@@ -47,18 +47,20 @@ function NeoSlider({
             initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ type: 'spring', stiffness: 220, damping: 20 }}
-            className="absolute -top-1.5 rounded-full bg-[#FBCC5C] px-2 py-1 text-[11px] font-semibold text-[#16243D] shadow-neo"
+            className="absolute -top-4 rounded-full bg-[#FBCC5C] px-2 py-1 text-[11px] font-semibold text-[#16243D] shadow-neo"
             style={{ left: `${percentage}%`, transform: 'translateX(-50%)' }}
           >
             {clampedValue}
           </motion.div>
         )}
         <motion.div
-          className="absolute top-1/2 flex h-7 w-7 -translate-y-1/2 -translate-x-1/2 items-center justify-center rounded-full border border-white/70 bg-[#F5F5F7] shadow-neo"
+          className="absolute top-1/2 flex h-8 w-8 -translate-y-1/2 -translate-x-1/2 items-center justify-center rounded-full border-2 border-white bg-[#FBCC5C] shadow-neo"
           style={{ left: `${percentage}%` }}
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-        />
+        >
+          <span className="sr-only">Slider thumb</span>
+        </motion.div>
         <input
           type="range"
           min={min}

@@ -90,54 +90,54 @@ export function PlanCreator({
   const totalSavings = dailyAmountWei * BigInt(customDays);
 
   return (
-    <Card className="p-8 border-2 border-black bg-celo-forest-green text-white">
-      <h3 className="text-h3 font-alpina mb-6 text-white">Review Your Plan</h3>
+    <Card className="p-8 rounded-neo shadow-neo bg-[#F5F5F7] border border-white/70 text-[#16243D]">
+      <h3 className="text-2xl font-semibold mb-6 text-[#16243D]">Review Your Plan</h3>
       
       <div className="space-y-4 mb-8">
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Level:</span>
-          <span className="text-body-m font-bold text-celo-yellow">{selectedLevel.name}</span>
+        <div className="flex justify-between border-b border-white/60 pb-2">
+          <span className="text-sm text-[#4B5563]">Level:</span>
+          <span className="text-sm font-semibold text-[#16243D]">{selectedLevel.name}</span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Daily Amount:</span>
-          <span className="text-body-m font-bold text-white">
+        <div className="flex justify-between border-b border-white/60 pb-2">
+          <span className="text-sm text-[#4B5563]">Daily Amount:</span>
+          <span className="text-sm font-semibold text-[#16243D]">
             ${customDailyAmount} {tokenSymbol ? `(${tokenSymbol})` : ""}
           </span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Total Days:</span>
-          <span className="text-body-m font-bold text-white">{customDays} days</span>
+        <div className="flex justify-between border-b border-white/60 pb-2">
+          <span className="text-sm text-[#4B5563]">Total Days:</span>
+          <span className="text-sm font-semibold text-[#16243D]">{customDays} days</span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Penalty Stake ({selectedLevel.penaltyPercent}%):</span>
-          <span className="text-body-m font-bold text-celo-error">
+        <div className="flex justify-between border-b border-white/60 pb-2">
+          <span className="text-sm text-[#4B5563]">Penalty Stake ({selectedLevel.penaltyPercent}%):</span>
+          <span className="text-sm font-semibold text-[#D65A5A]">
             ${penaltyStake} {tokenSymbol ? `(${formatUnits(totalStake, decimals)} ${tokenSymbol})` : ""}
           </span>
         </div>
-        <div className="flex justify-between border-b-2 border-white pb-2">
-          <span className="text-body-m text-white">Completion Reward (20%):</span>
-          <span className="text-body-m font-bold text-celo-success">
+        <div className="flex justify-between border-b border-white/60 pb-2">
+          <span className="text-sm text-[#4B5563]">Completion Reward (20%):</span>
+          <span className="text-sm font-semibold text-[#329F3B]">
             ${((Number(customDailyAmount) * customDays) * 0.2).toFixed(2)} {tokenSymbol ? `(${formatUnits(totalSavings * BigInt(20) / BigInt(100), decimals)} ${tokenSymbol})` : ""}
           </span>
         </div>
-        <div className="flex justify-between pt-4 border-t-4 border-celo-yellow">
-          <span className="text-body-l font-bold text-white">Total Savings:</span>
-          <span className="text-body-l font-bold text-celo-yellow">
+        <div className="flex justify-between pt-4 border-t-2 border-[#FBCC5C]">
+          <span className="text-base font-semibold text-[#16243D]">Total Savings:</span>
+          <span className="text-base font-semibold text-[#FBCC5C]">
             ${(Number(customDailyAmount) * customDays).toFixed(2)} {tokenSymbol ? `(${formatUnits(totalSavings, decimals)} ${tokenSymbol})` : ""}
           </span>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 border-2 border-celo-error bg-black">
-          <p className="text-body-s text-celo-error font-bold">Error: {error.message}</p>
+        <div className="mb-6 p-4 border border-[#D65A5A] bg-white/60 rounded-neo shadow-neoInset">
+          <p className="text-sm text-[#D65A5A] font-semibold">Error: {error.message}</p>
         </div>
       )}
 
       <Button
         onClick={handleCreatePlan}
         disabled={isPending || isConfirming || isCreating}
-        className="w-full"
+        className="w-full rounded-full bg-[#FBCC5C] text-[#16243D] shadow-neo hover:shadow-neoSoft"
         variant="default"
       >
         {isPending || isConfirming || isCreating ? (

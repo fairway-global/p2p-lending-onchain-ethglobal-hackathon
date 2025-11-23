@@ -1,0 +1,42 @@
+<!-- commit-daily-7-days.svg -->
+<svg width="260" height="180" viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Card background -->
+  <rect x="12" y="12" width="236" height="156" rx="20" fill="#F5F5F7"></rect>
+
+  <!-- Calendar body -->
+  <rect x="48" y="34" width="164" height="104" rx="18" fill="#FFFFFF"></rect>
+
+  <!-- Top bar -->
+  <rect x="48" y="34" width="164" height="26" rx="18" fill="#FBCC5C"></rect>
+
+  <!-- Calendar rings (7-day streak row) -->
+  <!-- faint rows -->
+  <g fill="none" stroke="#E5E7EB" stroke-width="1.5">
+    <line x1="64" y1="78" x2="196" y2="78"></line>
+    <line x1="64" y1="102" x2="196" y2="102"></line>
+  </g>
+
+  <!-- 7-day row dots -->
+  <!-- track line -->
+  <line x1="64" y1="78" x2="196" y2="78" stroke="#FFE4A3" stroke-width="4" stroke-linecap="round"></line>
+
+  <!-- 5 completed -->
+  <circle cx="70" cy="78" r="7" fill="#16243D"></circle>
+  <circle cx="94" cy="78" r="7" fill="#16243D"></circle>
+  <circle cx="118" cy="78" r="7" fill="#16243D"></circle>
+  <circle cx="142" cy="78" r="7" fill="#16243D"></circle>
+  <circle cx="166" cy="78" r="7" fill="#16243D"></circle>
+
+  <!-- upcoming -->
+  <circle cx="190" cy="78" r="7" fill="none" stroke="#CBD5E1" stroke-width="2"></circle>
+
+  <!-- Coin dropping into today -->
+  <circle cx="166" cy="56" r="9" fill="#FBCC5C"></circle>
+  <path d="M166 62 L166 71" stroke="#FBCC5C" stroke-width="2" stroke-linecap="round"></path>
+  <circle cx="166" cy="74" r="10" fill="none" stroke="#FBCC5C" stroke-width="2" stroke-dasharray="4 3"></circle>
+
+  <!-- subtle clock to reinforce 'daily' -->
+  <circle cx="84" cy="54" r="10" fill="#FFFFFF" stroke="#FACC15" stroke-width="2"></circle>
+  <line x1="84" y1="54" x2="84" y2="49" stroke="#16243D" stroke-width="2" stroke-linecap="round"></line>
+  <line x1="84" y1="54" x2="90" y2="54" stroke="#16243D" stroke-width="2" stroke-linecap="round"></line>
+</svg>

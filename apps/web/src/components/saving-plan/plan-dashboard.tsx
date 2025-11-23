@@ -226,32 +226,32 @@ export function PlanDashboard({ plan, planId, tokenAddress }: PlanDashboardProps
 
   return (
     <div className="space-y-6">
-      <h2 className="text-h2 font-alpina text-black mb-4">Your Saving Dashboard</h2>
+      <h2 className="text-3xl font-semibold text-[#16243D] mb-4">Your Saving Dashboard</h2>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Current Balance */}
-        <Card className="p-6 border-2 border-black bg-celo-light-blue">
+        <Card className="p-6 rounded-neo shadow-neo bg-[#F5F5F7] border border-white/70">
           <div className="text-center">
-            <p className="text-eyebrow font-bold text-black uppercase mb-2">Current Balance</p>
-            <p className="text-h3 font-alpina text-black">
+            <p className="text-xs font-semibold text-[#4B5563] uppercase mb-2 tracking-wide">Current Balance</p>
+            <p className="text-2xl font-semibold text-[#16243D]">
               {formatUnits(currentBalance, decimals)}
             </p>
-            <p className="text-body-s text-celo-body-copy mt-1">
+            <p className="text-sm text-[#4B5563] mt-1">
               {tokenSymbol || "tokens"}
             </p>
           </div>
         </Card>
 
         {/* Streak Count */}
-        <Card className={`p-6 border-2 border-black ${streakColor} transition-all duration-500`}>
+        <Card className={`p-6 rounded-neo shadow-neo border border-white/70 bg-[#F5F5F7] transition-all duration-500`}>
           <div className="text-center">
-            <p className="text-eyebrow font-bold uppercase mb-2" style={{ color: hasPaidToday ? "#000" : streakCount > 0 ? "#000" : "#6B7280" }}>
+            <p className="text-xs font-semibold uppercase mb-2 text-[#4B5563] tracking-wide">
               Streak Count
             </p>
-            <p className={`text-h3 font-alpina ${streakTextColor} transition-all duration-500`}>
+            <p className={`text-2xl font-semibold ${streakTextColor} transition-all duration-500`}>
               {streakCount}
             </p>
-            <p className={`text-body-s mt-1 ${streakTextColor} transition-all duration-500`}>
+            <p className={`text-sm mt-1 ${streakTextColor} transition-all duration-500`}>
               {hasPaidToday ? "✅ Paid Today!" : streakCount > 0 ? "Keep it up!" : "Start your streak"}
             </p>
           </div>
@@ -355,4 +355,3 @@ export function PlanDashboard({ plan, planId, tokenAddress }: PlanDashboardProps
     </div>
   );
 }
-

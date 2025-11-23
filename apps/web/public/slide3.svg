@@ -1,0 +1,33 @@
+<!-- finish-unlock-rewards.svg -->
+<svg width="260" height="180" viewBox="0 0 260 180" xmlns="http://www.w3.org/2000/svg">
+  <!-- Card background -->
+  <rect x="12" y="12" width="236" height="156" rx="20" fill="#F5F5F7"></rect>
+
+  <!-- Halo circle -->
+  <circle cx="130" cy="78" r="52" fill="#FFFFFF"></circle>
+
+  <!-- Chest body -->
+  <rect x="98" y="78" width="64" height="32" rx="10" fill="#FBCC5C"></rect>
+  <!-- Lid -->
+  <rect x="98" y="64" width="64" height="20" rx="10" fill="#FACC15"></rect>
+  <!-- Lock -->
+  <rect x="126" y="84" width="12" height="10" rx="4" fill="#FFFFFF"></rect>
+  <circle cx="132" cy="89" r="2" fill="#16243D"></circle>
+
+  <!-- Trophy emerging -->
+  <g transform="translate(130,58)">
+    <path d="M0 -12 C-10 -12 -14 -8 -14 -2 C-14 4 -10 8 -4 8 V10 H4 V8 C10 8 14 4 14 -2 C14 -8 10 -12 0 -12 Z" fill="#FFFFFF"></path>
+    <rect x="-6" y="10" width="12" height="4" fill="#FACC15"></rect>
+  </g>
+
+  <!-- Confetti / reward sparks -->
+  <circle cx="90" cy="46" r="4" fill="#FBCC5C"></circle>
+  <circle cx="170" cy="46" r="4" fill="#FBCC5C"></circle>
+  <circle cx="106" cy="34" r="3" fill="#FBBF77"></circle>
+  <circle cx="154" cy="34" r="3" fill="#FBBF77"></circle>
+  <path d="M124 28 L128 36 L120 36 Z" fill="#FBCC5C"></path>
+  <path d="M140 28 L144 36 L136 36 Z" fill="#FBCC5C"></path>
+
+  <!-- Subtle base shadow -->
+  <ellipse cx="130" cy="118" rx="48" ry="8" fill="#CBD5E1" opacity="0.4"></ellipse>
+</svg>
